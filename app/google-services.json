@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "255061443619",
+    "project_id": "recordit-93f4b",
+    "storage_bucket": "recordit-93f4b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255061443619:android:a13268cd8108375186dd96",
+        "android_client_info": {
+          "package_name": "com.toddler.recordit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "255061443619-u6iamippqpengf3tlvj0h241nmmc2hav.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.toddler.recordit",
+            "certificate_hash": "26c2914283e719fc188b8366945f3372c0dc8d0a"
+          }
+        },
+        {
+          "client_id": "255061443619-r2jbi60k39hoa339hfhuvj49j4g7npto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0RVb2qQSzatleOqM3YaZJSeKtPtJbZyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "255061443619-r2jbi60k39hoa339hfhuvj49j4g7npto.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
