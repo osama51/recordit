@@ -106,6 +106,15 @@ fun LoginScreen(isSignedIn: MutableState<Boolean>, firebaseAuth: MutableState<Fi
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_54)
+                Image(
+                    modifier = Modifier
+                        .height(100.dp)
+                        .fillMaxWidth(),
+
+                    imageVector = imageVector,
+                    contentDescription = "RecordIt Logo"
+                )
                 Text(
                     text = "RecordIt",
                     style = TextStyle(
@@ -123,22 +132,30 @@ fun LoginScreen(isSignedIn: MutableState<Boolean>, firebaseAuth: MutableState<Fi
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.onPrimary,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
                     onClick = {
                         activity.oneTapGoogleSignIn(
                             oneTapClient,
                             signInRequest,
                             signUpRequest,
                             firebaseAuth.value,
-                            isSignedIn
-                        )
-                    }
-                ) {
+                            isSignedIn)
+                    },
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 10.dp
+                    )
+                ){
                     Text(text = "Sign in")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = {
-                    }
+                    onClick = {},
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 10.dp
+                    )
                 ) {
                     Text(text = "Sign up")
                 }
