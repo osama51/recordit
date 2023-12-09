@@ -13,10 +13,13 @@ googleServices = "4.4.0"
 firebaseAuth = "22.3.0"
 playServicesAuth = "20.7.0"
 appcompat = "1.6.1"
+glide = "4.12.0"
+glideCompose = "1.0.0-alpha07"
+landscapist = "2.2.12"
+glideCompiler = "4.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-firebase-auth-v2070 = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuthVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -32,7 +35,12 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+firebase-auth-v2070 = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuthVersion" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+#glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+#glide-compose = { group = "com.github.bumptech.glide", name = "glide-compose", version.ref = "glideCompose" }
+#glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glideCompiler" }
+landscapist-glide = { group = "com.github.skydoves", name = "landscapist-glide", version.ref = "landscapist" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
