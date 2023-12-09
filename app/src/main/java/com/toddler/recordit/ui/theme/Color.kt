@@ -12,3 +12,6 @@ val Pink40 = Color(0xFF7D5260)
 
 val Red = Color(0xFFBB3D31)
 val Orange = Color(0xFFE95B4D)
+
+val selectedColor = Color(0xFFA8A8A8)
+val unselectedColor = Color(0xFFFFFFFF)

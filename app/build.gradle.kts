@@ -52,8 +52,12 @@ android {
 
 dependencies {
 
+//    implementation(libs.glide)
+//    implementation(libs.glide.compose)
+//    annotationProcessor(libs.glide.compiler)
+    implementation(libs.landscapist.glide)
     // Add the dependencies for Google Play services' authentication libraries
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation(libs.play.services.auth)
 
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)
