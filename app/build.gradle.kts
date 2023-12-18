@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.landscapist.glide)
     // Add the dependencies for Google Play services' authentication libraries
     implementation(libs.play.services.auth)
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.5.4")
 
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)

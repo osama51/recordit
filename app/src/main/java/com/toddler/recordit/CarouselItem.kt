@@ -24,34 +24,24 @@ import java.io.File
 
 @Composable
 fun CarouselItem(context: Context, item: RecordItem) {
+    val cardHight = 250.dp
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(cardHight)
             .shadow(elevation = 6.dp),
         shape = MaterialTheme.shapes.medium
     ) {
 //        val imgUri = Uri.parse(item.image)
         GlideImage(
-            imageModel = {
-//                            val file = File(context.filesDir, item.image)
-//                            val uri: Uri = FileProvider.getUriForFile(context, "com.toddler.recordit.fileprovider", file)
-//
-//                            uri.toString()
-
-//                         Uri.parse(item.image).toString()
-//                R.drawable.i20170914_by_ra_lilium_dbnsypi
-                         item.image
-                         },
-
+            imageModel = { item.image },
             imageOptions = ImageOptions(
                 contentScale = ContentScale.Crop,
-                contentDescription = item.description,
-            ),
+                contentDescription = item.description,),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp),
+                .height(cardHight),
             // shows a progress indicator when loading an image.
             loading = {
                 Box(Modifier.fillMaxSize()) {
@@ -64,5 +54,4 @@ fun CarouselItem(context: Context, item: RecordItem) {
             },
         )
     }
-
 }
