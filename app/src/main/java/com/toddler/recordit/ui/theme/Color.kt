@@ -15,3 +15,5 @@ val Orange = Color(0xFFE95B4D)
 
 val selectedColor = Color(0xFFA8A8A8)
 val unselectedColor = Color(0xFFFFFFFF)
+
+val Navy = Color(0xFF2B3B53)
