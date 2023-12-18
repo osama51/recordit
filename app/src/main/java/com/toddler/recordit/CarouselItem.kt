@@ -32,11 +32,17 @@ fun CarouselItem(context: Context, item: RecordItem) {
             .shadow(elevation = 6.dp),
         shape = MaterialTheme.shapes.medium
     ) {
+//        val imgUri = Uri.parse(item.image)
         GlideImage(
             imageModel = {
-                            val file = File(context.filesDir, item.image)
-                            val uri = FileProvider.getUriForFile(context, "com.toddler.recordit.fileprovider", file)
-                            uri.toString()
+//                            val file = File(context.filesDir, item.image)
+//                            val uri: Uri = FileProvider.getUriForFile(context, "com.toddler.recordit.fileprovider", file)
+//
+//                            uri.toString()
+
+//                         Uri.parse(item.image).toString()
+//                R.drawable.i20170914_by_ra_lilium_dbnsypi
+                         item.image
                          },
 
             imageOptions = ImageOptions(
