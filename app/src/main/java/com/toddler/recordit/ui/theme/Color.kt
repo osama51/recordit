@@ -17,3 +17,7 @@ val selectedColor = Color(0xFFA8A8A8)
 val unselectedColor = Color(0xFFFFFFFF)
 
 val Navy = Color(0xFF2B3B53)
+val NavyDark = Color(0xFF1E2A40)
+
+val Gray = Color(0xFFA8A8A8)
+val OffWhite = Color(0xFFD8D8D8)

@@ -1,6 +1,7 @@
 package com.toddler.recordit.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +25,17 @@ val fontName = GoogleFont("Rubik Doodle Triangles")
 val fontFamily = FontFamily(
     Font(googleFont = fontName, fontProvider = provider)
 )
+
+val Russo = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.russo_one_local, FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(R.font.russo_one_local, FontWeight.Bold)
+)
+
+val Abel = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.abel, FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(R.font.abel, FontWeight.Bold)
+)
+
 
 // Set of Material typography styles to start with
 val Typography = Typography(

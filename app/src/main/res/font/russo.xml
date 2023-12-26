@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Fonts -->
+
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:font="@font/russo_one_local"
+        android:fontVariationSettings="@font/russo_one_local"
+        android:ttcIndex="0" />
+
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:font="@font/russo_one" />
+
+</font-family>
