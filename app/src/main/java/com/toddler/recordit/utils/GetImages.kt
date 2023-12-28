@@ -1,9 +1,10 @@
-package com.toddler.recordit
+package com.toddler.recordit.utils
 
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.core.content.res.ResourcesCompat
+import com.toddler.recordit.R
 import java.io.IOException
 import java.io.InputStream
 

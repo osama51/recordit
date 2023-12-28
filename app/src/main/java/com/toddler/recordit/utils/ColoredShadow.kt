@@ -1,4 +1,4 @@
-package com.toddler.recordit
+package com.toddler.recordit.utils
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
