@@ -18,11 +18,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.toddler.recordit.playback.AndroidAudioPlayer
+import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.dashboard.HomeScreen
 import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
+
+    private val recorder by lazy {
+        AndroidAudioRecorder(applicationContext)
+    }
+
+    private val player by lazy {
+        AndroidAudioPlayer(applicationContext)
+    }
+
+    private var audioFile: File? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

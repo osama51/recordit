@@ -1,12 +1,20 @@
 package com.toddler.recordit.screens.record
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.renderscript.Allocation
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,8 +29,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.skydoves.landscapist.ImageOptions
@@ -41,23 +55,30 @@ import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
 import com.toddler.recordit.Dashboard
+import com.toddler.recordit.MainActivity
 import com.toddler.recordit.R
-import com.toddler.recordit.utils.getImagesFromAssets
+import com.toddler.recordit.playback.AndroidAudioPlayer
+import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.ui.theme.NavyDark
+import com.toddler.recordit.utils.getImagesFromAssets
+import java.io.File
+import java.util.Locale
 
 @Composable
 fun RecordScreen(navController: NavHostController) {
-    Scaffold(Modifier.fillMaxSize()) {
-        ScreenContent(it, navController)
-    }
+//    Scaffold(Modifier.fillMaxSize()) {
+    ScreenContent(navController)
+//    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
-
+fun ScreenContent(navController: NavHostController) {
     val context = LocalContext.current
+
     val itemList = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
-        val imageName = imageMap.entries.first().key
+        var imageName = imageMap.entries.first().key
+        imageName = imageName.dropLast(4).capitalizeWords()
         RecordItem(
             id = index,
             title = imageName, //imageMap.toString().substring(7),
@@ -65,11 +86,15 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
             image = imageMap.entries.first().value
         )
     }
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color.White)) {
+    var item by remember { mutableStateOf(itemList[0]) }
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         BlurredImage(
-            imageDrawable = itemList[7].image,
+            imageDrawable = item.image,
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.Center)
@@ -94,7 +119,6 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
 
         Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
 //                .background(androidx.compose.ui.graphics.Color.White)
         ) {
@@ -105,7 +129,7 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
 //                    .background(Color.White)
             ) {
                 val img = GlideImage(
-                    imageModel = { itemList[7].image },
+                    imageModel = { item.image },
                     component = rememberImageComponent {
                         +CrossfadePlugin(duration = 1000)
 //                        +BlurTransformationPlugin(radius = 300) // between 0 to Int.MAX_VALUE.
@@ -119,7 +143,8 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
                     },
                     imageOptions = ImageOptions(
                         contentScale = ContentScale.Fit,
-                        contentDescription = itemList[7].description,
+                        requestSize = IntSize(800, 600),
+                        contentDescription = item.description,
                     ),
                     modifier = Modifier
                         .padding(4.dp)
@@ -157,8 +182,19 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
                     )
                 }
 
+                Text(
+                    text = item.title,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(14.dp)
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
             }
-            Box( // Lower Body Container
+            Box(
+                // Lower Body Container
                 modifier = Modifier
                     .weight(1f, true)
                     .fillMaxWidth(),
@@ -182,12 +218,13 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
                             alpha = 0.5f
                         },
                 ) { }
+                val interactionSource = remember { MutableInteractionSource() }
+                val pressed by interactionSource.collectIsPressedAsState()
                 ElevatedButton(
                     modifier = Modifier
                         .padding(14.dp)
                         .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                        .align(Alignment.Center)
-                    ,
+                        .align(Alignment.Center),
                     contentPadding = PaddingValues(16.dp),
                     elevation = ButtonDefaults.buttonElevation(12.dp),
                     colors = ButtonDefaults.elevatedButtonColors(
@@ -195,8 +232,18 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
                         contentColor = NavyDark,
                     ),
                     onClick = {
-                        navController.navigate(Dashboard.route)
+                        item = if(item == itemList.last()) itemList.first() else itemList[item.id + 1]
+                        Log.i("RecordScreen", "item.id = ${item.id}")
+                        Log.i("RecordScreen", "item.last = ${item == itemList.last()}")
+//                        val cacheDir = context.cacheDir
+                              if(pressed) {
+//                                  File(cacheDir, "audio.mp3").also {
+//                                  recorder.start(it)
+//                                      audioFile = it
+//                                  }
+                              }
                     },
+                    interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
                 ) {
                     Icon(
                         modifier = Modifier
@@ -234,6 +281,21 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
         modifier = modifier
     )
     return img
+}
+
+// function to take a string, replace underscores with spaces, and capitalize each word
+fun String.capitalizeWords(): String = split("_").joinToString(" ") {
+    it.replaceFirstChar { firstChar ->
+        if (firstChar.isLowerCase()) firstChar.titlecase(
+            Locale.ROOT
+        ) else firstChar.toString()
+    }
+}
+
+fun Context.getActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.getActivity()
+    else -> null
 }
 
 ////////////////////////////////////////
