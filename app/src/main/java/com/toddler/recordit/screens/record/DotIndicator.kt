@@ -1,4 +1,4 @@
-package com.toddler.recordit
+package com.toddler.recordit.screens.record
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background

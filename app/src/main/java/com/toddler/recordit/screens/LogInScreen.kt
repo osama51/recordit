@@ -1,4 +1,4 @@
-package com.toddler.recordit
+package com.toddler.recordit.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,6 +44,9 @@ import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
+import com.toddler.recordit.LoginActivity
+import com.toddler.recordit.R
+import com.toddler.recordit.oneTapGoogleSignIn
 import com.toddler.recordit.ui.theme.Orange
 import com.toddler.recordit.ui.theme.RecordItTheme
 import com.toddler.recordit.ui.theme.Red
