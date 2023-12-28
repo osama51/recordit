@@ -21,13 +21,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -44,8 +42,7 @@ import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
 import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
-import com.toddler.recordit.getImagesFromAssets
-import com.toddler.recordit.ui.theme.Navy
+import com.toddler.recordit.utils.getImagesFromAssets
 import com.toddler.recordit.ui.theme.NavyDark
 
 @Composable
@@ -169,7 +166,7 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
                 Card(
                     elevation = CardDefaults.cardElevation(28.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        containerColor = Color.DarkGray,
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -182,7 +179,7 @@ fun ScreenContent(padding: PaddingValues, navController: NavHostController) {
 //                    clip = true // Allow shadow to extend beyond the Box
 //                )
                         .graphicsLayer {
-                            alpha = 1f
+                            alpha = 0.5f
                         },
                 ) { }
                 ElevatedButton(

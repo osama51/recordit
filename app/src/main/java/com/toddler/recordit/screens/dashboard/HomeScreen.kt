@@ -1,8 +1,5 @@
 package com.toddler.recordit.screens.dashboard
 
-import android.content.Context
-import android.graphics.drawable.Drawable
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +16,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,12 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
-import androidx.core.content.res.ResourcesCompat
 import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
 import com.toddler.recordit.R
 import com.toddler.recordit.Record
-import com.toddler.recordit.getImagesFromAssets
+import com.toddler.recordit.utils.getImagesFromAssets
 import com.toddler.recordit.screens.record.CarouselItem
 import com.toddler.recordit.screens.record.DotIndicators
 import com.toddler.recordit.screens.record.RecordItem
@@ -53,8 +48,6 @@ import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Orange
 import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.Russo
-import java.io.IOException
-import java.io.InputStream
 
 
 @OptIn(ExperimentalFoundationApi::class)
