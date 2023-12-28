@@ -1,4 +1,4 @@
-package com.toddler.recordit
+package com.toddler.recordit.screens.record
 
 import android.content.Intent
 import android.graphics.drawable.Drawable

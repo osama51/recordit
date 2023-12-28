@@ -1,4 +1,4 @@
-package com.toddler.recordit
+package com.toddler.recordit.screens.record
 
 import android.content.Context
 import android.widget.Toast
@@ -15,10 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.glide.GlideImage
+import com.toddler.recordit.coloredShadow
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +33,20 @@ fun CarouselItem(context: Context, item: RecordItem) {
         modifier = Modifier
             .fillMaxWidth()
             .height(cardHeight)
-            .shadow(elevation = 6.dp),
+            .shadow(elevation = 6.dp)
+//            .graphicsLayer(
+//                alpha = 1.0f,
+//                ambientShadowColor = Color.Red,
+//            )
+//            .coloredShadow(
+//                color = Color.Red,
+//                alpha = 0.2f,
+//                borderRadius = 0.dp,
+//                shadowRadius = 20.dp,
+//                offsetY = 0.dp,
+//                offsetX = 0.dp
+//            )
+        ,
         shape = MaterialTheme.shapes.medium,
         onClick = {
             val drawable = item.image
@@ -45,7 +61,9 @@ fun CarouselItem(context: Context, item: RecordItem) {
                 contentDescription = item.description,),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(cardHeight),
+                .height(cardHeight)
+                .fillMaxSize()
+            ,
             // shows a progress indicator when loading an image.
             loading = {
                 Box(Modifier.fillMaxSize()) {

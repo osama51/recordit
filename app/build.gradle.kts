@@ -52,13 +52,19 @@ android {
 
 dependencies {
 
+
 //    implementation(libs.glide)
 //    implementation(libs.glide.compose)
 //    annotationProcessor(libs.glide.compiler)
     implementation(libs.landscapist.glide)
+    implementation(libs.landscapist.placeholder)
+    implementation(libs.landscapist.animation)
+    implementation(libs.landscapist.transformation)
+
     // Add the dependencies for Google Play services' authentication libraries
     implementation(libs.play.services.auth)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.5.4")
+
 
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)
@@ -70,6 +76,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
