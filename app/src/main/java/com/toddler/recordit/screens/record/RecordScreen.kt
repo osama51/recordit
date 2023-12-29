@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,7 +84,7 @@ fun RecordScreen(navController: NavHostController) {
 fun ScreenContent(navController: NavHostController, itemList: List<RecordItem>) {
 
 
-    var item by remember { mutableStateOf(itemList[0]) }
+    var item by rememberSaveable { mutableStateOf(itemList[0]) }
 
     Box(
         modifier = Modifier
