@@ -9,26 +9,29 @@ import java.io.IOException
 import java.io.InputStream
 
 // fun to return list of myimages from assets/myimages path using Glide
-fun getImagesFromAssets(context: Context): MutableList<Map<String, Drawable>> {
+fun getImagesFromAssets(context: Context): MutableList<Map<String, String>> {
     val assetManager = context.assets
     val files = assetManager.list("myimages")!!.toList()
-    val images = mutableListOf<String>()
-    val mapImages = mutableListOf<Map<String, Drawable>>()
+//    val images = mutableListOf<String>()
+//    val mapImages = mutableListOf<Map<String, Drawable>>()
+//    val drawableImages = mutableListOf<Drawable>()
 //    val defaultImage = R.drawable.i20170914_by_ra_lilium_dbnsypi.toString()
+    val mapImages = mutableListOf<Map<String, String>>()
+
     val defaultImage = ResourcesCompat.getDrawable(
         context.resources,
         R.drawable.i20170914_by_ra_lilium_dbnsypi,
         null
     )
-    val drawableImages = mutableListOf<Drawable>()
     try {
         files.forEach {
             if(validFile(it)){
-                val image: InputStream = assetManager.open("myimages/$it")
-                val d = Drawable.createFromStream(image, null)
-                images.add("myimages/$it")
-                drawableImages.add(d ?: defaultImage!!)
-                mapImages.add(mapOf(it to (d ?: defaultImage!!)))
+//                val image: InputStream = assetManager.open("myimages/$it")
+//                val d = Drawable.createFromStream(image, null)
+//                images.add("myimages/$it")
+//                drawableImages.add(d ?: defaultImage!!)
+//                mapImages.add(mapOf(it to (d ?: defaultImage!!)))
+                mapImages.add(mapOf(it to "myimages/$it"))
             } else {
                 Log.d("getImagesFromAssets","File $it is not an image")
             }
@@ -36,7 +39,7 @@ fun getImagesFromAssets(context: Context): MutableList<Map<String, Drawable>> {
 
     } catch (ex: IOException) {
         ex.printStackTrace()
-        drawableImages.fill(defaultImage!!)
+//        drawableImages.fill(defaultImage!!)
     }
     return mapImages
 }

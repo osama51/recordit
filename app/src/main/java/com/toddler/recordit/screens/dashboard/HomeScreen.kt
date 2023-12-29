@@ -63,7 +63,7 @@ fun HomeScreen(navController: NavHostController) {
             id = index,
             title = imageName, //imageMap.toString().substring(7),
             description = "Description ${imageName}",
-            image = imageMap.entries.first().value
+            imagePath = imageMap.entries.first().value
         )
     }
     Scaffold(
@@ -75,7 +75,7 @@ fun HomeScreen(navController: NavHostController) {
         val files = assetManager.list("myimages")!!.toList()
         val numberOfImages = files.size
 
-        val pageCount = numberOfImages - 1
+        val pageCount = numberOfImages
         val pagerState = rememberPagerState(
             initialPage = 0,
             initialPageOffsetFraction = 0.0f //within the range -0.5 to 0.5

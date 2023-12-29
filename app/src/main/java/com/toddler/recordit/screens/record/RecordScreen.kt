@@ -70,33 +70,38 @@ fun RecordScreen(navController: NavHostController) {
             id = index,
             title = imageName, //imageMap.toString().substring(7),
             description = "Description ${imageName}",
-            image = imageMap.entries.first().value
+            imagePath = imageMap.entries.first().value
         )
     }
 
 //    Scaffold(Modifier.fillMaxSize()) {
-    ScreenContent(navController, itemList)
+    ScreenContent(context, navController, itemList)
 //    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScreenContent(navController: NavHostController, itemList: List<RecordItem>) {
+fun ScreenContent(context: Context, navController: NavHostController, itemList: List<RecordItem>) {
 
+    var item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(itemList[0]) }
 
-    var item by rememberSaveable { mutableStateOf(itemList[0]) }
+    val drawable by lazy {
+        Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        BlurredImage(
-            imageDrawable = item.image,
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.Center)
-        )
+        drawable?.let {
+            BlurredImage(
+                imageDrawable = it,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)
+            )
+        }
 //        val bitmap = BitmapFactory
 //            .decodeResource(
 //                LocalContext.current.resources,
@@ -127,7 +132,7 @@ fun ScreenContent(navController: NavHostController, itemList: List<RecordItem>) 
 //                    .background(Color.White)
             ) {
                 val img = GlideImage(
-                    imageModel = { item.image },
+                    imageModel = { drawable },
                     component = rememberImageComponent {
                         +CrossfadePlugin(duration = 1000)
 //                        +BlurTransformationPlugin(radius = 300) // between 0 to Int.MAX_VALUE.
@@ -230,17 +235,11 @@ fun ScreenContent(navController: NavHostController, itemList: List<RecordItem>) 
                         contentColor = NavyDark,
                     ),
                     onClick = {
-                        Log.i("RecordScreen", "item.id = ${item.id}")
-                        Log.i("RecordScreen", "item.last = ${item == itemList.last()}")
-                        Log.i("RecordScreen", "item.last = ${itemList.last()}")
-                        Log.i("RecordScreen", "item.current = ${item}")
 
-                        if(item == itemList.last()) {
-                            Log.i("RecordScreen", "SET ITEM TO FIRST")
-                            item = itemList.first()
+                        item = if(item == itemList.last()) {
+                            itemList.first()
                         } else {
-                            Log.i("RecordScreen", "Still PRINTING")
-                            item = itemList[item.id + 1]
+                            itemList[item.id + 1]
                         }
 //                        val cacheDir = context.cacheDir
                               if(pressed) {
@@ -271,8 +270,8 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
     val img = GlideImage(
         imageModel = { imageDrawable },
         component = rememberImageComponent {
-            +CrossfadePlugin(duration = 2000)
-            +BlurTransformationPlugin(radius = 100) // between 0 to Int.MAX_VALUE.
+            +CrossfadePlugin(duration = 1000)
+            +BlurTransformationPlugin(radius = 50) // between 0 to Int.MAX_VALUE.
 //                        // shows a shimmering effect when loading an image.
 //                        +ShimmerPlugin(
 //                            baseColor = Color.DarkGray,
