@@ -12,7 +12,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -46,7 +45,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.skydoves.landscapist.ImageOptions
@@ -55,30 +53,18 @@ import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
 import com.toddler.recordit.Dashboard
-import com.toddler.recordit.MainActivity
 import com.toddler.recordit.R
-import com.toddler.recordit.playback.AndroidAudioPlayer
-import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.utils.getImagesFromAssets
-import java.io.File
 import java.util.Locale
 
 @Composable
 fun RecordScreen(navController: NavHostController) {
-//    Scaffold(Modifier.fillMaxSize()) {
-    ScreenContent(navController)
-//    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun ScreenContent(navController: NavHostController) {
     val context = LocalContext.current
-
     val itemList = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
         var imageName = imageMap.entries.first().key
         imageName = imageName.dropLast(4).capitalizeWords()
+        Log.i("RecordScreen", "itemList re-occupied !!")
         RecordItem(
             id = index,
             title = imageName, //imageMap.toString().substring(7),
@@ -86,8 +72,19 @@ fun ScreenContent(navController: NavHostController) {
             image = imageMap.entries.first().value
         )
     }
+
+//    Scaffold(Modifier.fillMaxSize()) {
+    ScreenContent(navController, itemList)
+//    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ScreenContent(navController: NavHostController, itemList: List<RecordItem>) {
+
+
     var item by remember { mutableStateOf(itemList[0]) }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -143,17 +140,17 @@ fun ScreenContent(navController: NavHostController) {
                     },
                     imageOptions = ImageOptions(
                         contentScale = ContentScale.Fit,
-                        requestSize = IntSize(800, 600),
                         contentDescription = item.description,
                     ),
                     modifier = Modifier
+                        .fillMaxWidth()
                         .padding(4.dp)
                         .align(Alignment.Center)
                         .clip(RoundedCornerShape(12.dp))
 //                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(8.dp), clip = true)
                         .graphicsLayer(
                             alpha = 1.0f,
-                            shadowElevation = 12f,
+//                            shadowElevation = 12f,
                         ),
 //                    .background(Color.Gray),
                 )
@@ -232,9 +229,18 @@ fun ScreenContent(navController: NavHostController) {
                         contentColor = NavyDark,
                     ),
                     onClick = {
-                        item = if(item == itemList.last()) itemList.first() else itemList[item.id + 1]
                         Log.i("RecordScreen", "item.id = ${item.id}")
                         Log.i("RecordScreen", "item.last = ${item == itemList.last()}")
+                        Log.i("RecordScreen", "item.last = ${itemList.last()}")
+                        Log.i("RecordScreen", "item.current = ${item}")
+
+                        if(item == itemList.last()) {
+                            Log.i("RecordScreen", "SET ITEM TO FIRST")
+                            item = itemList.first()
+                        } else {
+                            Log.i("RecordScreen", "Still PRINTING")
+                            item = itemList[item.id + 1]
+                        }
 //                        val cacheDir = context.cacheDir
                               if(pressed) {
 //                                  File(cacheDir, "audio.mp3").also {
