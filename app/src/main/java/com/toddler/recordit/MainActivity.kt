@@ -2,20 +2,11 @@ package com.toddler.recordit
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,15 +22,16 @@ import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val recorder by lazy {
-        AndroidAudioRecorder(applicationContext) }
+        AndroidAudioRecorder(applicationContext)
+    }
     private val player by lazy {
-        AndroidAudioPlayer(applicationContext) }
+        AndroidAudioPlayer(applicationContext)
+    }
     private var audioFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,13 +40,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             RecordItTheme {
                 // A surface container using the 'background' color from the theme
-                MyApp()
+                MyApp(hiltViewModel<ImageRecordingViewModel>())
             }
         }
     }
 
     companion object {
-//        @Inject
+        //        @Inject
         lateinit var sharedPreferences: SharedPreferences
         fun isFirstLaunch(): Boolean {
             // Check if a flag indicating first launch is absent in SharedPreferences
@@ -68,44 +60,64 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//enum class Screen(val route: String) {
-//    Dashboard("dashboard"),
-//    Record("record"),
-//}
+fun determineInitialRoute(): String {
+    return if (isFirstLaunch()) {
+        noMoreFirstLaunch()
+        LogIn.route
+    } else {
+        Dashboard.route
+    }
+}
 
 @Composable
-fun MyApp() {
+fun MyApp(hiltViewModel: ImageRecordingViewModel) {
     val navController = rememberNavController()
-//    val currentScreen = rememberSaveable{ mutableIntStateOf(Screen.Dashboard.ordinal) }
+    val initialRoute = remember { determineInitialRoute() }
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        var firstScreenRoute by remember { mutableStateOf("") }
-
-        firstScreenRoute = if (isFirstLaunch()) {
-            noMoreFirstLaunch()
-            LogIn.route
-        } else {
-            Dashboard.route
-        }
-        Box(modifier = Modifier.padding(it)) {
-            NavHost(navController = navController, startDestination = firstScreenRoute) {
-                composable(Dashboard.route) {
-                    HomeScreen(navController)
+    NavHost(navController = navController, startDestination = initialRoute) {
+        /**
+         * The NavController's navigate function modifies the NavController's internal state.
+         * To comply with the single source of truth principle as much as possible,
+         * only the composable function or state holder that hoists the NavController instance
+         * and those composable functions that take the NavController as a parameter should make
+         * navigation calls. Navigation events triggered from other composable functions lower
+         * in the UI hierarchy need to expose those events to the caller appropriately using functions.
+         *
+         * */
+        composable(Dashboard.route) {
+//                    backStackEntry ->
+//                    val parentEntry = remember(backStackEntry) {
+//                        navController.getBackStackEntry(initialRoute)
+//                    }
+//                    val parentViewModel = hiltViewModel<ImageRecordingViewModel>(parentEntry)
+            Log.i("MainActivity", "Dashboard route")
+            HomeScreen(viewModel = hiltViewModel,
+                startRecordScreen = {
+                    navController.navigate(Record.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                })
 //                    currentScreen.intValue = Screen.Dashboard.ordinal
-                }
-                composable(Record.route) {
-                    RecordScreen(navController, viewModel = hiltViewModel<ImageRecordingViewModel>())
-//                    currentScreen.intValue = Screen.Record.ordinal
-                }
-                composable(LogIn.route) {
-                    FirstLaunchScreen(navController)
-                }
-            }
         }
+        composable(Record.route) {
+//                    backStackEntry ->
+//                    val parentEntry = remember(backStackEntry) {
+//                        navController.getBackStackEntry(initialRoute)
+//                    }
+//                    val parentViewModel = hiltViewModel<ImageRecordingViewModel>(parentEntry)
+            Log.i("MainActivity", "Record route")
+            RecordScreen(viewModel = hiltViewModel,
+                goBack = {
+                    navController.navigate(Dashboard.route)
+                })
+//                    currentScreen.intValue = Screen.Record.ordinal
+        }
+        composable(LogIn.route) {
+            Log.i("MainActivity", "LogIn route")
+            FirstLaunchScreen(navController)
+        }
+
     }
 }
 
