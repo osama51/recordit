@@ -1,6 +1,7 @@
 [versions]
 agp = "8.3.0-alpha15"
 firebaseAuthVersion = "20.7.0"
+hiltCompiler = "2.44"
 kotlin = "1.9.0"
 coreKtx = "1.12.0"
 junit = "4.13.2"
@@ -18,6 +19,8 @@ glideCompose = "1.0.0-alpha07"
 landscapist = "2.2.12"
 glideCompiler = "4.12.0"
 navigationCompose = "2.7.6"
+viewmodelLifeCycleCompose = "2.6.1"
+hilt = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,10 +48,22 @@ landscapist-glide = { group = "com.github.skydoves", name = "landscapist-glide",
 landscapist-placeholder = { group = "com.github.skydoves", name = "landscapist-placeholder", version.ref = "landscapist" }
 landscapist-animation = { group = "com.github.skydoves", name = "landscapist-animation", version.ref = "landscapist" }
 landscapist-transformation = { group = "com.github.skydoves", name = "landscapist-transformation", version.ref = "landscapist" }
+
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
+androidx-hilt = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt" }
+androix-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt" }
+dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hiltCompiler" }
+viewmodel-hilt = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel", version.ref = "hilt" }
+viewmodel-lifeCycle = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "viewmodelLifeCycleCompose" }
+
+
+
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+hiltAndroid = { id = "com.google.dagger.hilt.android", version.ref = "hiltCompiler" }
+#id 'com.google.dagger.hilt.android' version '2.44' apply false
 

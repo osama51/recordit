@@ -47,6 +47,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.animation.crossfade.CrossfadePlugin
@@ -60,19 +62,9 @@ import com.toddler.recordit.utils.getImagesFromAssets
 import java.util.Locale
 
 @Composable
-fun RecordScreen(navController: NavHostController) {
+fun RecordScreen(navController: NavHostController, viewModel: ImageRecordingViewModel) {
     val context = LocalContext.current
-    val itemList = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
-        var imageName = imageMap.entries.first().key
-        imageName = imageName.dropLast(4).capitalizeWords()
-        Log.i("RecordScreen", "itemList re-occupied !!")
-        RecordItem(
-            id = index,
-            title = imageName, //imageMap.toString().substring(7),
-            description = "Description ${imageName}",
-            imagePath = imageMap.entries.first().value
-        )
-    }
+    val itemList = viewModel.itemList
 
 //    Scaffold(Modifier.fillMaxSize()) {
     ScreenContent(context, navController, itemList)

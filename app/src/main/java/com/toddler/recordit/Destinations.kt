@@ -12,6 +12,6 @@ object Record : Destinations {
     override val route: String = "record"
 }
 
-//object LogIn : Destinations {
-//    override val route: String = "login"
-//}
+object LogIn : Destinations {
+    override val route: String = "login"
+}
