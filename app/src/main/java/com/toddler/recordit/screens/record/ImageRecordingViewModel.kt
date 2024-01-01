@@ -1,6 +1,5 @@
 package com.toddler.recordit.screens.record
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -44,8 +43,14 @@ class ImageRecordingViewModel @Inject constructor(
     private val _recordedFilePath = MutableStateFlow("")
     val recordedFilePath: StateFlow<String> = _recordedFilePath
 
+    private val _numberOfImages = MutableStateFlow(0)
+    val numberOfImages: StateFlow<Int> = _numberOfImages
+
     // State flows and other properties remain the same
 
+    init {
+        _numberOfImages.value = itemList.size
+    }
     fun startRecording(outputFile: File) {
         try {
             audioRecorder.start(outputFile)

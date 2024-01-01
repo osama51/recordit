@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,18 +63,19 @@ import com.toddler.recordit.utils.getImagesFromAssets
 import java.util.Locale
 
 @Composable
-fun RecordScreen(navController: NavHostController, viewModel: ImageRecordingViewModel) {
+fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
     val context = LocalContext.current
     val itemList = viewModel.itemList
+    Log.i("RecordScreen", "COMPOSED RECORD SCREEN")
 
 //    Scaffold(Modifier.fillMaxSize()) {
-    ScreenContent(context, navController, itemList)
+    ScreenContent(context, itemList, goBack)
 //    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScreenContent(context: Context, navController: NavHostController, itemList: List<RecordItem>) {
+fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Unit) {
 
     var item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(itemList[0]) }
 
@@ -94,24 +96,6 @@ fun ScreenContent(context: Context, navController: NavHostController, itemList: 
                     .align(Alignment.Center)
             )
         }
-//        val bitmap = BitmapFactory
-//            .decodeResource(
-//                LocalContext.current.resources,
-//                R.drawable.i20170914_by_ra_lilium_dbnsypi
-//            )
-//
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-//            LegacyBlurImage(bitmap, 25f) // 0 < radius <= 25
-//        } else {
-//            BlurImage(
-//                bitmap,
-//                Modifier
-//                    .fillMaxSize()
-//                    .blur(radiusX = 15.dp, radiusY = 15.dp)
-//            )
-////                LegacyBlurImage(bitmap, 25f) // 0 < radius <= 25
-
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -123,7 +107,7 @@ fun ScreenContent(context: Context, navController: NavHostController, itemList: 
                     .fillMaxWidth()
 //                    .background(Color.White)
             ) {
-                val img = GlideImage(
+                GlideImage(
                     imageModel = { drawable },
                     component = rememberImageComponent {
                         +CrossfadePlugin(duration = 1000)
@@ -164,9 +148,7 @@ fun ScreenContent(context: Context, navController: NavHostController, itemList: 
                         containerColor = Color.White,
                         contentColor = NavyDark,
                     ),
-                    onClick = {
-                        navController.navigate(Dashboard.route)
-                    },
+                    onClick = goBack,
                 ) {
                     Icon(
                         modifier = Modifier
@@ -228,18 +210,18 @@ fun ScreenContent(context: Context, navController: NavHostController, itemList: 
                     ),
                     onClick = {
 
-                        item = if(item == itemList.last()) {
+                        item = if (item == itemList.last()) {
                             itemList.first()
                         } else {
                             itemList[item.id + 1]
                         }
 //                        val cacheDir = context.cacheDir
-                              if(pressed) {
+                        if (pressed) {
 //                                  File(cacheDir, "audio.mp3").also {
 //                                  recorder.start(it)
 //                                      audioFile = it
 //                                  }
-                              }
+                        }
                     },
                     interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
                 ) {
@@ -259,7 +241,7 @@ fun ScreenContent(context: Context, navController: NavHostController, itemList: 
 
 @Composable
 private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier) {
-    val img = GlideImage(
+    return GlideImage(
         imageModel = { imageDrawable },
         component = rememberImageComponent {
             +CrossfadePlugin(duration = 1000)
@@ -278,7 +260,6 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
         ),
         modifier = modifier
     )
-    return img
 }
 
 // function to take a string, replace underscores with spaces, and capitalize each word
@@ -288,45 +269,4 @@ fun String.capitalizeWords(): String = split("_").joinToString(" ") {
             Locale.ROOT
         ) else firstChar.toString()
     }
-}
-
-fun Context.getActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.getActivity()
-    else -> null
-}
-
-////////////////////////////////////////
-
-@Composable
-private fun LegacyBlurImage(
-    bitmap: Bitmap,
-    blurRadio: Float,
-    modifier: Modifier = Modifier.fillMaxSize()
-) {
-
-    val renderScript = RenderScript.create(LocalContext.current)
-    val bitmapAlloc = Allocation.createFromBitmap(renderScript, bitmap)
-    ScriptIntrinsicBlur.create(renderScript, bitmapAlloc.element).apply {
-        setRadius(blurRadio)
-        setInput(bitmapAlloc)
-        forEach(bitmapAlloc)
-    }
-    bitmapAlloc.copyTo(bitmap)
-    renderScript.destroy()
-
-    BlurImage(bitmap, modifier)
-}
-
-@Composable
-fun BlurImage(
-    bitmap: Bitmap,
-    modifier: Modifier = Modifier,
-) {
-    Image(
-        bitmap = bitmap.asImageBitmap(),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier
-    )
 }

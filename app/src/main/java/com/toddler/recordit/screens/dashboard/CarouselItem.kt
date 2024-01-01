@@ -48,7 +48,6 @@ fun CarouselItem(context: Context, item: RecordItem) {
         ,
         shape = MaterialTheme.shapes.medium,
         onClick = {
-            val drawable = item.imagePath
             Toast.makeText(context, item.title, Toast.LENGTH_SHORT).show()
         }
     ) {
