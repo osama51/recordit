@@ -37,7 +37,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
+import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 import com.toddler.recordit.R
+import com.toddler.recordit.Record
 import com.toddler.recordit.screens.record.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.Abel
 import com.toddler.recordit.ui.theme.OffWhite
