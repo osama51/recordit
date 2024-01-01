@@ -55,7 +55,10 @@ import com.toddler.recordit.ui.theme.Red
 //private lateinit var signInRequest: BeginSignInRequest
 
 @Composable
-fun LoginScreen(isSignedIn: MutableState<Boolean>, firebaseAuth: MutableState<FirebaseAuth>) {
+fun LoginScreen(
+    isSignedIn: MutableState<Boolean>,
+    firebaseAuth: MutableState<FirebaseAuth>
+) {
     val activity = LoginActivity()
     val id_token = stringResource(R.string.id_token)
     // TODO: Login Screen
@@ -140,12 +143,13 @@ fun LoginScreen(isSignedIn: MutableState<Boolean>, firebaseAuth: MutableState<Fi
                             signInRequest,
                             signUpRequest,
                             firebaseAuth.value,
-                            isSignedIn)
+                            isSignedIn
+                        )
                     },
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 10.dp
                     )
-                ){
+                ) {
                     Text(text = "Sign in")
                 }
                 Spacer(modifier = Modifier.height(16.dp))

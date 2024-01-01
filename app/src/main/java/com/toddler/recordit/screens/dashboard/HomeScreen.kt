@@ -40,7 +40,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.toddler.recordit.R
 import com.toddler.recordit.Record
 import com.toddler.recordit.utils.getImagesFromAssets
-import com.toddler.recordit.screens.record.CarouselItem
 import com.toddler.recordit.screens.record.DotIndicators
 import com.toddler.recordit.screens.record.RecordItem
 import com.toddler.recordit.ui.theme.Abel

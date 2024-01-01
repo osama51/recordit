@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
+    id("kotlin-kapt")
+//    id("dagger.hilt.android.plugin")
+
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -61,6 +65,12 @@ dependencies {
     implementation(libs.landscapist.placeholder)
     implementation(libs.landscapist.animation)
     implementation(libs.landscapist.transformation)
+    implementation(libs.androidx.hilt)
+//    kapt("androidx.hilt:hilt-compiler:1.0.0-alpha01")
+//    implementation(libs.dagger.hilt.android)
+//    implementation(libs.hilt.compiler)
+    implementation("com.google.dagger:hilt-android:2.44")
+    kapt("com.google.dagger:hilt-compiler:2.44")
 
     // Add the dependencies for Google Play services' authentication libraries
     implementation(libs.play.services.auth)
@@ -85,4 +95,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// Allow references to generated code
+kapt {
+//    correctErrorTypes = true
 }
