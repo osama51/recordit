@@ -23,3 +23,5 @@ val NavyDark = Color(0xFF1E2A40)
 
 val Gray = Color(0xFFA8A8A8)
 val OffWhite = Color(0xFFD8D8D8)
+
+val White = Color(0xFFFFFFFF)
