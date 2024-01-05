@@ -6,7 +6,8 @@ data class RecordItem(
     val id: Int,
     val title: String,
     val description: String,
-    val imagePath: String
+    val imagePath: String,
+    val recorded: Boolean = false
 ) {}
 
 
@@ -17,7 +18,8 @@ val RecordItemSaver = Saver<RecordItem, Map<String, Any?>> (
             "id" to it.id,
             "title" to it.title,
             "description" to it.description,
-            "imagePath" to it.imagePath // Save the image path
+            "imagePath" to it.imagePath, // Save the image path
+             "recorded" to it.recorded
         )
     },
     restore = {
@@ -25,7 +27,8 @@ val RecordItemSaver = Saver<RecordItem, Map<String, Any?>> (
             id = it["id"] as Int,
             title = it["title"] as String,
             description = it["description"] as String,
-            imagePath = it["imagePath"] as String // Restore image path
+            imagePath = it["imagePath"] as String, // Restore image path
+            recorded = it["recorded"] as Boolean
         )
     }
 )

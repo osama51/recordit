@@ -1,12 +1,20 @@
 package com.toddler.recordit
 
+import android.Manifest
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,6 +30,7 @@ import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -43,9 +52,14 @@ class MainActivity : ComponentActivity() {
                 MyApp(hiltViewModel<ImageRecordingViewModel>())
             }
         }
+        checkStoragePermission()
+        requestRecordPermission()
     }
 
     companion object {
+        private const val STORAGE_PERMISSION_REQUEST_CODE = 1
+        private const val MY_PERMISSION_REQUEST_RECORD_AUDIO = 2
+
         //        @Inject
         lateinit var sharedPreferences: SharedPreferences
         fun isFirstLaunch(): Boolean {
@@ -58,6 +72,65 @@ class MainActivity : ComponentActivity() {
             sharedPreferences.edit().putBoolean("isFirstLaunch", false).apply()
         }
     }
+
+
+    private fun requestRecordPermission(){
+        val permissionCheck = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        )
+        if (permissionCheck === PERMISSION_GRANTED) {
+            // you have the permission, proceed to record audio
+
+            Log.i("SpeechActivity", "Speech Recognizer is listening")
+        } else {
+
+            // you don't have permission, try requesting for it
+            ActivityCompat.requestPermissions(
+                this, arrayOf<String>(Manifest.permission.RECORD_AUDIO),
+                MY_PERMISSION_REQUEST_RECORD_AUDIO
+            )
+        }
+    }
+
+    // Check and request storage permission
+    private fun checkStoragePermission() {
+        // Check if the storage permission is already granted
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission is already granted
+            // Perform your desired operations here
+        } else {
+            // Permission is not granted, request it
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                STORAGE_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    // Handle permission request result
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted
+                // Perform your desired operations here
+            } else {
+                // Permission denied
+                // Handle permission denied scenario
+            }
+        }
+    }
+
 }
 
 fun determineInitialRoute(): String {

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,6 +50,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toFile
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -60,6 +63,7 @@ import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.utils.getImagesFromAssets
+import java.io.File
 import java.util.Locale
 
 @Composable
@@ -69,13 +73,18 @@ fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
     Log.i("RecordScreen", "COMPOSED RECORD SCREEN")
 
 //    Scaffold(Modifier.fillMaxSize()) {
-    ScreenContent(context, itemList, goBack)
+    ScreenContent(context, itemList, viewModel, goBack)
 //    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Unit) {
+fun ScreenContent(
+    context: Context,
+    itemList: List<RecordItem>,
+    viewModel: ImageRecordingViewModel,
+    goBack: () -> Unit
+) {
 
     var item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(itemList[0]) }
 
@@ -135,6 +144,16 @@ fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Un
 //                            shadowElevation = 12f,
                         ),
 //                    .background(Color.Gray),
+                    // shows a progress indicator when loading an image.
+                    loading = {
+                        Box(Modifier.fillMaxSize()) {
+                            CircularProgressIndicator(Modifier.align(Alignment.Center))
+                        }
+                    },
+                    // shows an error text message when request failed.
+                    failure = @Composable {
+                        Text(text = "image request failed.")
+                    },
                 )
 
                 ElevatedButton(
@@ -197,6 +216,8 @@ fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Un
                 ) { }
                 val interactionSource = remember { MutableInteractionSource() }
                 val pressed by interactionSource.collectIsPressedAsState()
+                var recorded by remember { mutableStateOf(item.recorded) }
+                val audioFile = File(context.cacheDir, "audio.mp3")
                 ElevatedButton(
                     modifier = Modifier
                         .padding(14.dp)
@@ -210,20 +231,30 @@ fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Un
                     ),
                     onClick = {
 
-                        item = if (item == itemList.last()) {
-                            itemList.first()
-                        } else {
-                            itemList[item.id + 1]
-                        }
+//                        item = if (item == itemList.last()) {
+//                            itemList.first()
+//                        } else {
+//                            itemList[item.id + 1]
+//                        }
 //                        val cacheDir = context.cacheDir
-                        if (pressed) {
+                        if (!viewModel.isRecording()) {
 //                                  File(cacheDir, "audio.mp3").also {
 //                                  recorder.start(it)
 //                                      audioFile = it
 //                                  }
+
+//                            viewModel.returnUri(item.title).path?.let {
+//                                File(
+//                                    it
+//                                )
+//                            }?.let { viewModel.startRecording(it) }
+                            viewModel.startRecording(audioFile)
+                        } else {
+                            viewModel.stopRecording()
+                            recorded = true
                         }
                     },
-                    interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
+//                    interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
                 ) {
                     Icon(
                         modifier = Modifier
@@ -233,6 +264,59 @@ fun ScreenContent(context: Context, itemList: List<RecordItem>, goBack: () -> Un
                         tint = NavyDark,
                     )
                 }
+
+                var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
+                var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
+
+                Box(modifier = Modifier
+                    .padding(14.dp)
+                    .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                    .align(Alignment.BottomCenter),){
+                    if(recorded){
+                        ElevatedButton(
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(40.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                .align(Alignment.BottomCenter),
+                            contentPadding = PaddingValues(8.dp),
+                            elevation = ButtonDefaults.buttonElevation(12.dp),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = NavyDark,
+                            ),
+                            onClick = {
+//                            val inputStream = context.contentResolver.openInputStream(
+//                                viewModel.returnUri(item.title)
+//                            )
+                                viewModel.apply {
+                                    buttonIcon = if (!isPlaying) {
+                                        startPlayback(audioFile)
+                                        R.drawable.ic_stop
+                                    } else {
+                                        stopPlayback()
+                                        R.drawable.ic_play
+                                    }
+                                    isPlaying = !isPlaying
+                                }
+
+                                viewModel.triggerWhenFinished {
+                                    buttonIcon = R.drawable.ic_play
+                                    isPlaying = false
+                                }
+                            },
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .size(60.dp),
+                                imageVector = ImageVector.vectorResource(id = buttonIcon),
+                                contentDescription = "Record",
+                                tint = NavyDark,
+                            )
+                        }
+                    }
+
+                }
+
             }
         }
     }
@@ -258,15 +342,17 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
             contentScale = ContentScale.Crop,
             alpha = 0.5f
         ),
-        modifier = modifier
+        modifier = modifier,
+//        // shows a progress indicator when loading an image.
+//        loading = {
+//            Box(Modifier.fillMaxSize()) {
+//                CircularProgressIndicator(Modifier.align(Alignment.Center))
+//            }
+//        },
+//        // shows an error text message when request failed.
+//        failure = @Composable {
+//            Text(text = "image request failed.")
+//        },
     )
 }
 
-// function to take a string, replace underscores with spaces, and capitalize each word
-fun String.capitalizeWords(): String = split("_").joinToString(" ") {
-    it.replaceFirstChar { firstChar ->
-        if (firstChar.isLowerCase()) firstChar.titlecase(
-            Locale.ROOT
-        ) else firstChar.toString()
-    }
-}

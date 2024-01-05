@@ -32,7 +32,7 @@ fun CarouselItem(context: Context, item: RecordItem) {
         modifier = Modifier
             .fillMaxWidth()
             .height(cardHeight)
-            .shadow(elevation = 6.dp)
+
 //            .graphicsLayer(
 //                alpha = 1.0f,
 //                ambientShadowColor = Color.Red,

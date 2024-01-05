@@ -152,6 +152,8 @@ fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit
                     .align(Alignment.BottomEnd)
                     .padding(24.dp),
                 onClick = startRecordScreen,
+                containerColor = MaterialTheme.colorScheme.onPrimary,
+                contentColor = MaterialTheme.colorScheme.primary
             )
 
 //            DotIndicators(
