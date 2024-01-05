@@ -53,10 +53,28 @@ class ImageRecordingViewModel @Inject constructor(
     private val _numberOfImages = MutableStateFlow(0)
     val numberOfImages: StateFlow<Int> = _numberOfImages
 
+    private val _numberOfImagesRecorded = MutableStateFlow(0)
+    val numberOfImagesRecorded: StateFlow<Int> = _numberOfImagesRecorded
+
+    private val _numberOfImagesNotRecorded = MutableStateFlow(0)
+    val numberOfImagesNotRecorded: StateFlow<Int> = _numberOfImagesNotRecorded
+
     // State flows and other properties remain the same
 
     init {
         _numberOfImages.value = itemList.size
+        determineNumberOfImagesRecorded()
+        determineNumberOfImagesNotRecorded()
+    }
+
+    fun determineNumberOfImagesRecorded() {
+        _numberOfImagesRecorded.value = itemList.filter { it.recorded }.size
+        Log.i("RecordScreen", "determineNumberOfImagesRecorded() called | ${_numberOfImagesRecorded.value}")
+    }
+
+    fun determineNumberOfImagesNotRecorded() {
+        _numberOfImagesNotRecorded.value = itemList.filter { !it.recorded }.size
+        Log.i("RecordScreen", "determineNumberOfImagesNotRecorded() called | ${_numberOfImagesNotRecorded.value}")
     }
 
     fun startRecording(outputFile: File) {

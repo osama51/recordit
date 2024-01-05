@@ -251,6 +251,7 @@ fun ScreenContent(
                             viewModel.startRecording(audioFile)
                         } else {
                             viewModel.stopRecording()
+                            item.recorded = true
                             recorded = true
                         }
                     },
