@@ -7,7 +7,7 @@ data class RecordItem(
     val title: String,
     val description: String,
     val imagePath: String,
-    val recorded: Boolean = false
+    var recorded: Boolean = false
 ) {}
 
 
