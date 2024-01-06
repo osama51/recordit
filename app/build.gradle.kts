@@ -76,6 +76,8 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.5.4")
 
+    implementation("com.google.code.gson:gson:2.8.8")
+
 
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)
