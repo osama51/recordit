@@ -3,6 +3,7 @@ package com.toddler.recordit.screens.record
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.renderscript.Allocation
 import android.renderscript.RenderScript
@@ -32,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -61,8 +63,10 @@ import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
 import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
+import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.utils.getImagesFromAssets
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Locale
 
@@ -90,6 +94,11 @@ fun ScreenContent(
 
     val drawable by lazy {
         Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
+
+//        val bitmap = BitmapFactory.decodeStream(context.assets.open(item.imagePath))
+//        val outputStream = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+//        outputStream.toByteArray()
     }
 
     Box(
@@ -192,13 +201,13 @@ fun ScreenContent(
             Box(
                 // Lower Body Container
                 modifier = Modifier
-                    .weight(1f, true)
+                    .weight(1f,)
                     .fillMaxWidth(),
             ) {
                 Card(
-                    elevation = CardDefaults.cardElevation(28.dp),
+
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.DarkGray,
+                        containerColor = DarkGrayHalfTransparent,
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -210,26 +219,34 @@ fun ScreenContent(
 //                    shape = RoundedCornerShape(0.dp),
 //                    clip = true // Allow shadow to extend beyond the Box
 //                )
-                        .graphicsLayer {
-                            alpha = 0.5f
-                        },
-                ) { }
-                val interactionSource = remember { MutableInteractionSource() }
-                val pressed by interactionSource.collectIsPressedAsState()
-                var recorded by remember { mutableStateOf(item.recorded) }
-                val audioFile = File(context.cacheDir, "audio.mp3")
-                ElevatedButton(
-                    modifier = Modifier
-                        .padding(14.dp)
-                        .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                        .align(Alignment.Center),
-                    contentPadding = PaddingValues(16.dp),
-                    elevation = ButtonDefaults.buttonElevation(12.dp),
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = Color.White,
-                        contentColor = NavyDark,
-                    ),
-                    onClick = {
+
+//                        .graphicsLayer {
+//                            alpha = 0.5f
+//                        },
+                ) {
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val pressed by interactionSource.collectIsPressedAsState()
+                        var recorded by remember { mutableStateOf(item.recorded) }
+                        val audioFile = File(context.cacheDir, "audio.mp3")
+
+                        var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
+                        var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
+
+                        ElevatedButton(
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                .align(Alignment.TopCenter),
+                            contentPadding = PaddingValues(16.dp),
+                            elevation = ButtonDefaults.buttonElevation(12.dp),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = NavyDark,
+                            ),
+                            interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
+                            onClick = {
 
 //                        item = if (item == itemList.last()) {
 //                            itemList.first()
@@ -237,87 +254,113 @@ fun ScreenContent(
 //                            itemList[item.id + 1]
 //                        }
 //                        val cacheDir = context.cacheDir
-                        if (!viewModel.isRecording()) {
-//                                  File(cacheDir, "audio.mp3").also {
-//                                  recorder.start(it)
-//                                      audioFile = it
-//                                  }
 
-//                            viewModel.returnUri(item.title).path?.let {
-//                                File(
-//                                    it
-//                                )
-//                            }?.let { viewModel.startRecording(it) }
-                            viewModel.startRecording(audioFile)
-                        } else {
-                            viewModel.stopRecording()
-                            item.recorded = true
-                            recorded = true
-                        }
-                    },
-//                    interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(60.dp),
-                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
-                        contentDescription = "Record",
-                        tint = NavyDark,
-                    )
-                }
+//                        if (pressed) {
+////                                  File(cacheDir, "audio.mp3").also {
+////                                  recorder.start(it)
+////                                      audioFile = it
+////                                  }
+//
+////                            viewModel.returnUri(item.title).path?.let {
+////                                File(
+////                                    it
+////                                )
+////                            }?.let { viewModel.startRecording(it) }
+//                            viewModel.startRecording(audioFile)
+//                            Log.i("RecordScreen", "I'm pressed and am recording")
 
-                var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
-                var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
-
-                Box(modifier = Modifier
-                    .padding(14.dp)
-                    .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                    .align(Alignment.BottomCenter),){
-                    if(recorded){
-                        ElevatedButton(
-                            modifier = Modifier
-                                .padding(14.dp)
-                                .size(40.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                                .align(Alignment.BottomCenter),
-                            contentPadding = PaddingValues(8.dp),
-                            elevation = ButtonDefaults.buttonElevation(12.dp),
-                            colors = ButtonDefaults.elevatedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = NavyDark,
-                            ),
-                            onClick = {
-//                            val inputStream = context.contentResolver.openInputStream(
-//                                viewModel.returnUri(item.title)
-//                            )
-                                viewModel.apply {
-                                    buttonIcon = if (!isPlaying) {
-                                        startPlayback(audioFile)
-                                        R.drawable.ic_stop
-                                    } else {
-                                        stopPlayback()
-                                        R.drawable.ic_play
-                                    }
-                                    isPlaying = !isPlaying
-                                }
-
-                                viewModel.triggerWhenFinished {
-                                    buttonIcon = R.drawable.ic_play
-                                    isPlaying = false
-                                }
+//                        } else {
+//                            viewModel.stopRecording()
+//                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
+//                            item.recorded = true
+//                            recorded = true
+//                        }
                             },
                         ) {
                             Icon(
                                 modifier = Modifier
                                     .size(60.dp),
-                                imageVector = ImageVector.vectorResource(id = buttonIcon),
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
                                 contentDescription = "Record",
                                 tint = NavyDark,
                             )
+
+                            if (pressed && !isPlaying) {
+                                viewModel.returnUri(item.title).path?.let {
+                                    File(
+                                        it
+                                    )
+                                }?.let { viewModel.startRecording(it) }
+//                    viewModel.startRecording(audioFile)
+                                Log.i("RecordScreen", "I'm pressed and am recording")
+
+                                DisposableEffect(Unit) {
+                                    onDispose {
+                                        if(viewModel.isRecording()){
+                                            //released
+                                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
+                                            viewModel.stopRecording()
+                                            item.recorded = true
+                                            recorded = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+
+                        Box(
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                .align(Alignment.BottomCenter),
+                        ) {
+                            if (recorded) {
+                                ElevatedButton(
+                                    modifier = Modifier
+                                        .padding(14.dp)
+                                        .size(40.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                        .align(Alignment.BottomCenter),
+                                    contentPadding = PaddingValues(8.dp),
+                                    elevation = ButtonDefaults.buttonElevation(12.dp),
+                                    colors = ButtonDefaults.elevatedButtonColors(
+                                        containerColor = Color.Transparent,
+                                        contentColor = NavyDark,
+                                    ),
+                                    onClick = {
+//                            val inputStream = context.contentResolver.openInputStream(
+//                                viewModel.returnUri(item.title)
+//                            )
+                                        viewModel.apply {
+                                            buttonIcon = if (!isPlaying) {
+                                                startPlayback(audioFile)
+                                                R.drawable.ic_stop
+                                            } else {
+                                                stopPlayback()
+                                                R.drawable.ic_play
+                                            }
+                                            isPlaying = !isPlaying
+                                        }
+
+                                        viewModel.triggerWhenFinished {
+                                            buttonIcon = R.drawable.ic_play
+                                            isPlaying = false
+                                        }
+                                    },
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .size(60.dp),
+                                        imageVector = ImageVector.vectorResource(id = buttonIcon),
+                                        contentDescription = "Record",
+                                        tint = NavyDark,
+                                    )
+                                }
+                            }
+
                         }
                     }
-
                 }
-
             }
         }
     }
