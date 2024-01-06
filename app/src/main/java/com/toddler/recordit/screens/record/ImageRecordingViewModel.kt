@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.utils.pathConfig
@@ -65,7 +66,9 @@ class ImageRecordingViewModel @Inject constructor(
         _numberOfImages.value = itemList.size
         determineNumberOfImagesRecorded()
         determineNumberOfImagesNotRecorded()
+
     }
+
 
     fun determineNumberOfImagesRecorded() {
         _numberOfImagesRecorded.value = itemList.filter { it.recorded }.size
@@ -140,6 +143,25 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     // onCleared() for resource release
+
+    // save ItemList to json file using gson library
+    fun saveItemListToJson(){
+        val gson = Gson()
+        val json = gson.toJson(itemList)
+        val file = File(context.filesDir, "itemList.json")
+        file.writeText(json)
+        Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
+    }
+
+    // load ItemList from json file using gson library
+    fun loadItemListFromJson(){
+        val gson = Gson()
+        val file = File(context.filesDir, "itemList.json")
+        val json = file.readText()
+        val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
+        Log.i("RecordScreen", "itemList loaded from json | ${file.absolutePath}")
+        Log.i("RecordScreen", "itemList loaded from json | ${itemListFromJson}")
+    }
 
     // function to take a string, replace underscores with spaces, and capitalize each word
     private fun String.capitalizeWords(): String = split("_").joinToString(" ") {

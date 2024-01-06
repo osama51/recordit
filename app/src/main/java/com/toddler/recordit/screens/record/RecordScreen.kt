@@ -9,12 +9,14 @@ import android.renderscript.Allocation
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -65,6 +67,7 @@ import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
 import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
+import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.utils.getImagesFromAssets
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -225,11 +228,15 @@ fun ScreenContent(
 //                        },
                 ) {
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally,) {
                         val interactionSource = remember { MutableInteractionSource() }
                         val pressed by interactionSource.collectIsPressedAsState()
                         var recorded by remember { mutableStateOf(item.recorded) }
-                        val audioFile = File(context.cacheDir, "audio.mp3")
+//                        val isRecording by remember { mutableStateOf(viewModel.isRecording.value) }
+                        var isRecordingLocal by remember { mutableStateOf(false) }
+//                        val audioFile = File(context.cacheDir, "audio.mp3")
 
                         var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
                         var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
@@ -238,7 +245,8 @@ fun ScreenContent(
                             modifier = Modifier
                                 .padding(14.dp)
                                 .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                                .align(Alignment.TopCenter),
+//                                .align(Alignment.TopCenter)
+                            ,
                             contentPadding = PaddingValues(16.dp),
                             elevation = ButtonDefaults.buttonElevation(12.dp),
                             colors = ButtonDefaults.elevatedButtonColors(
@@ -247,7 +255,6 @@ fun ScreenContent(
                             ),
                             interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
                             onClick = {
-
 //                        item = if (item == itemList.last()) {
 //                            itemList.first()
 //                        } else {
@@ -277,15 +284,8 @@ fun ScreenContent(
 //                        }
                             },
                         ) {
-                            Icon(
-                                modifier = Modifier
-                                    .size(60.dp),
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
-                                contentDescription = "Record",
-                                tint = NavyDark,
-                            )
-
                             if (pressed && !isPlaying) {
+                                isRecordingLocal = true
                                 viewModel.returnUri(item.title).path?.let {
                                     File(
                                         it
@@ -298,14 +298,42 @@ fun ScreenContent(
                                     onDispose {
                                         if(viewModel.isRecording()){
                                             //released
+                                            isRecordingLocal = false
                                             Log.i("RecordScreen", "I'm not pressed and I stopped recording")
                                             viewModel.stopRecording()
+
                                             item.recorded = true
                                             recorded = true
                                         }
                                     }
                                 }
+
+                                viewModel.saveItemListToJson()
                             }
+                            Icon(
+                                modifier = Modifier
+                                    .size(60.dp),
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
+                                contentDescription = "Record",
+                                tint = NavyDark,
+                            )
+
+                        }
+
+                        if(isRecordingLocal){
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .padding(14.dp),
+                                color = NavyDark,
+                                strokeWidth = 4.dp,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(Color.Red)
+                            )
                         }
 
 
@@ -313,8 +341,10 @@ fun ScreenContent(
                             modifier = Modifier
                                 .padding(14.dp)
                                 .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                                .align(Alignment.BottomCenter),
+//                                .align(Alignment.BottomCenter)
+                            ,
                         ) {
+
                             if (recorded) {
                                 ElevatedButton(
                                     modifier = Modifier
@@ -328,12 +358,13 @@ fun ScreenContent(
                                         contentColor = NavyDark,
                                     ),
                                     onClick = {
+                                        viewModel.loadItemListFromJson()
 //                            val inputStream = context.contentResolver.openInputStream(
 //                                viewModel.returnUri(item.title)
 //                            )
                                         viewModel.apply {
                                             buttonIcon = if (!isPlaying) {
-                                                startPlayback(audioFile)
+                                                viewModel.audioFile.value?.let { startPlayback(it) } // audioFile is ignored inside
                                                 R.drawable.ic_stop
                                             } else {
                                                 stopPlayback()
