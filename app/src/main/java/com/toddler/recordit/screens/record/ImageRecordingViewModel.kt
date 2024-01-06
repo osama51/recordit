@@ -80,11 +80,11 @@ class ImageRecordingViewModel @Inject constructor(
     fun startRecording(outputFile: File) {
         try {
             audioRecorder.start(outputFile)
-            _isRecording.value = true
             Log.i("RecordScreen", "Started Recording | Recording: ${_recordedFilePath.value}")
             _recordedFilePath.value =
                 outputFile.absolutePath
             _audioFile.value = outputFile
+            _isRecording.value = true
         } catch (e: Exception) {
             // Handle recording errors
         }
@@ -95,10 +95,11 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     fun stopRecording() {
+        // wait for a delay to ensure the file is written
+        Thread.sleep(500)
         audioRecorder.stop()
         _isRecording.value = false
         Log.i("RecordScreen", "Stopped Recording | Recording: ${_recordedFilePath.value}")
-
     }
 
     fun startPlayback(file: File) {

@@ -3,6 +3,7 @@ package com.toddler.recordit.recorder
 import android.content.Context
 import android.media.MediaRecorder
 import android.os.Build
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
@@ -36,6 +37,7 @@ class AndroidAudioRecorder(
 
     override fun stop() {
         recorder?.apply {
+            Log.i("AndroidAudioRecorder", "$recorder")
             stop()
             reset()
         }

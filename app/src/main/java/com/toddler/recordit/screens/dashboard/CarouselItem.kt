@@ -1,9 +1,12 @@
 package com.toddler.recordit.screens.dashboard
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.glide.GlideImage
 import com.toddler.recordit.screens.record.RecordItem
+import java.io.ByteArrayOutputStream
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +35,7 @@ fun CarouselItem(context: Context, item: RecordItem) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(cardHeight)
+            .fillMaxHeight()
 
 //            .graphicsLayer(
 //                alpha = 1.0f,
@@ -54,8 +58,20 @@ fun CarouselItem(context: Context, item: RecordItem) {
 //        val imgUri = Uri.parse(item.image)
 
         val drawable by lazy {
-            Drawable.createFromStream(context.assets.open(item.imagePath), null)
+            Drawable.createFromStream(context.assets.open(item.imagePath), null) // this is the default that I should use, but will use the below for now
+
+//            BitmapFactory.decodeStream(context.assets.open(item.imagePath))
+
+            // trying to compress the image, but it does not improve the performance
+//            val bitmap = BitmapFactory.decodeStream(context.assets.open(item.imagePath))
+//            val outputStream = ByteArrayOutputStream()
+//            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+//            outputStream.toByteArray()
         }
+//        val inputStream = context.assets.open(item.imagePath)
+//        // compress the drawable to a bitmap
+//        val bitmap = BitmapFactory.decodeStream(inputStream)
+
 
         GlideImage(
             imageModel = { drawable },

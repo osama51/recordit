@@ -25,3 +25,6 @@ val Gray = Color(0xFFA8A8A8)
 val OffWhite = Color(0xFFD8D8D8)
 
 val White = Color(0xFFFFFFFF)
+val Transparent = Color(0x00000000)
+
+val DarkGrayHalfTransparent = Color(0x80000000)
