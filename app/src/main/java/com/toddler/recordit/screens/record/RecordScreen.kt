@@ -14,7 +14,11 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +36,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,12 +56,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toFile
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.skydoves.landscapist.ImageOptions
@@ -68,6 +77,7 @@ import com.toddler.recordit.R
 import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.ui.theme.Red
+import com.toddler.recordit.ui.theme.White
 import com.toddler.recordit.utils.getImagesFromAssets
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -76,11 +86,10 @@ import java.util.Locale
 @Composable
 fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
     val context = LocalContext.current
-    val itemList = viewModel.itemList
     Log.i("RecordScreen", "COMPOSED RECORD SCREEN")
 
 //    Scaffold(Modifier.fillMaxSize()) {
-    ScreenContent(context, itemList, viewModel, goBack)
+    ScreenContent(context, viewModel, goBack)
 //    }
 }
 
@@ -88,12 +97,13 @@ fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
 @Composable
 fun ScreenContent(
     context: Context,
-    itemList: List<RecordItem>,
     viewModel: ImageRecordingViewModel,
     goBack: () -> Unit
 ) {
 
-    var item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(itemList[0]) }
+    val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+
+    val item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(viewModel.currentItem.value!!) }
 
     val drawable by lazy {
         Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
@@ -185,7 +195,7 @@ fun ScreenContent(
                         modifier = Modifier
                             .size(60.dp),
                         imageVector = ImageVector.vectorResource(id = R.drawable.ic_back),
-                        contentDescription = "Record",
+                        contentDescription = "Go Back",
                         tint = NavyDark,
                     )
                 }
@@ -204,7 +214,7 @@ fun ScreenContent(
             Box(
                 // Lower Body Container
                 modifier = Modifier
-                    .weight(1f,)
+                    .weight(1f)
                     .fillMaxWidth(),
             ) {
                 Card(
@@ -228,9 +238,11 @@ fun ScreenContent(
 //                        },
                 ) {
 
-                    Column(modifier = Modifier.fillMaxSize(),
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.SpaceBetween,
-                        horizontalAlignment = Alignment.CenterHorizontally,) {
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
                         val interactionSource = remember { MutableInteractionSource() }
                         val pressed by interactionSource.collectIsPressedAsState()
                         var recorded by remember { mutableStateOf(item.recorded) }
@@ -241,12 +253,21 @@ fun ScreenContent(
                         var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
                         var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
 
+
+                        Box(
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(7.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(if (isRecordingLocal) Color.Red else Color.Transparent)
+                        )
+
                         ElevatedButton(
                             modifier = Modifier
                                 .padding(14.dp)
                                 .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
 //                                .align(Alignment.TopCenter)
-                            ,
+                                    ,
                             contentPadding = PaddingValues(16.dp),
                             elevation = ButtonDefaults.buttonElevation(12.dp),
                             colors = ButtonDefaults.elevatedButtonColors(
@@ -254,62 +275,74 @@ fun ScreenContent(
                                 contentColor = NavyDark,
                             ),
                             interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
-                            onClick = {
-//                        item = if (item == itemList.last()) {
-//                            itemList.first()
-//                        } else {
-//                            itemList[item.id + 1]
-//                        }
-//                        val cacheDir = context.cacheDir
-
-//                        if (pressed) {
-////                                  File(cacheDir, "audio.mp3").also {
-////                                  recorder.start(it)
-////                                      audioFile = it
-////                                  }
-//
-////                            viewModel.returnUri(item.title).path?.let {
-////                                File(
-////                                    it
-////                                )
-////                            }?.let { viewModel.startRecording(it) }
-//                            viewModel.startRecording(audioFile)
-//                            Log.i("RecordScreen", "I'm pressed and am recording")
-
-//                        } else {
-//                            viewModel.stopRecording()
-//                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
-//                            item.recorded = true
-//                            recorded = true
-//                        }
-                            },
+                            onClick = { },
                         ) {
-                            if (pressed && !isPlaying) {
-                                isRecordingLocal = true
-                                viewModel.returnUri(item.title).path?.let {
-                                    File(
-                                        it
-                                    )
-                                }?.let { viewModel.startRecording(it) }
-//                    viewModel.startRecording(audioFile)
-                                Log.i("RecordScreen", "I'm pressed and am recording")
+//                            if (pressed && !isPlaying) {
+//                                isRecordingLocal = true
+//                                viewModel.startRecording(viewModel.returnFile())
+////                    viewModel.startRecording(audioFile)
+//                                Log.i("RecordScreen", "I'm pressed and am recording")
+//
+//                                DisposableEffect(Unit) {
+//                                    onDispose {
+//                                        if(viewModel.isRecording()){
+//                                            //released
+//                                            isRecordingLocal = false
+//                                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
+//                                            viewModel.stopRecording()
+//
+//                                            item.recorded = true
+//                                            viewModel.updateItemList(item)
+//                                            recorded = true
+//                                        }
+//                                    }
+//                                }
+//                            }
+                            Box(modifier = Modifier
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = {  },
+                                )
+                            .fillMaxSize().pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        Log.i("RecordScreen", "I'm pressed")
+                                        try {
+                                            if (!isPlaying) {
+                                                isRecordingLocal = true
+                                                viewModel.startRecording(viewModel.returnFile())
 
-                                DisposableEffect(Unit) {
-                                    onDispose {
-                                        if(viewModel.isRecording()){
-                                            //released
-                                            isRecordingLocal = false
-                                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
-                                            viewModel.stopRecording()
+                                                Log.i(
+                                                    "RecordScreen",
+                                                    "I'm pressed and am recording"
+                                                )
+                                            }
+                                            awaitRelease()
+                                        } finally {
+                                            if (viewModel.isRecording()) {
+                                                //released
+                                                isRecordingLocal = false
+                                                Log.i(
+                                                    "RecordScreen",
+                                                    "I'm not pressed and I stopped recording"
+                                                )
+                                                viewModel.stopRecording()
 
-                                            item.recorded = true
-                                            recorded = true
+                                                item.recorded = true
+                                                viewModel.updateItemList(item)
+                                                recorded = true
+
+                                                viewModel.saveItemListToJson()
+                                            }
                                         }
-                                    }
-                                }
+                                    },
+                                    onTap = {
+                                        Log.i("RecordScreen", "I'm tapped")
+                                    },
+                                )
+                            },) {
 
-                                viewModel.saveItemListToJson()
-                            }
                             Icon(
                                 modifier = Modifier
                                     .size(60.dp),
@@ -317,61 +350,45 @@ fun ScreenContent(
                                 contentDescription = "Record",
                                 tint = NavyDark,
                             )
+                            }
 
                         }
 
-                        if(isRecordingLocal){
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .padding(14.dp),
-                                color = NavyDark,
-                                strokeWidth = 4.dp,
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(Color.Red)
-                            )
-                        }
 
 
                         Box(
                             modifier = Modifier
                                 .padding(14.dp)
-                                .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
 //                                .align(Alignment.BottomCenter)
-                            ,
                         ) {
 
                             if (recorded) {
                                 ElevatedButton(
                                     modifier = Modifier
                                         .padding(14.dp)
-                                        .size(40.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                        .size(60.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
                                         .align(Alignment.BottomCenter),
                                     contentPadding = PaddingValues(8.dp),
-                                    elevation = ButtonDefaults.buttonElevation(12.dp),
+//                                    elevation = ButtonDefaults.buttonElevation(12.dp),
                                     colors = ButtonDefaults.elevatedButtonColors(
                                         containerColor = Color.Transparent,
                                         contentColor = NavyDark,
                                     ),
                                     onClick = {
-                                        viewModel.loadItemListFromJson()
 //                            val inputStream = context.contentResolver.openInputStream(
 //                                viewModel.returnUri(item.title)
 //                            )
                                         viewModel.apply {
                                             buttonIcon = if (!isPlaying) {
-                                                viewModel.audioFile.value?.let { startPlayback(it) } // audioFile is ignored inside
+                                                startPlayback()
                                                 R.drawable.ic_stop
                                             } else {
                                                 stopPlayback()
                                                 R.drawable.ic_play
                                             }
-                                            isPlaying = !isPlaying
                                         }
+                                        isPlaying = !isPlaying
 
                                         viewModel.triggerWhenFinished {
                                             buttonIcon = R.drawable.ic_play
@@ -383,8 +400,8 @@ fun ScreenContent(
                                         modifier = Modifier
                                             .size(60.dp),
                                         imageVector = ImageVector.vectorResource(id = buttonIcon),
-                                        contentDescription = "Record",
-                                        tint = NavyDark,
+                                        contentDescription = "Play/Stop Icon",
+                                        tint = White,
                                     )
                                 }
                             }
@@ -392,6 +409,20 @@ fun ScreenContent(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Dispose the Composition when viewLifecycleOwner is destroyed
+    DisposableEffect(lifecycleOwner) {
+        onDispose {
+            viewModel.saveItemListToJson()
+
+            if (viewModel.isRecording()) {
+                viewModel.stopRecording()
+            }
+            if (viewModel.isPlaying()) {
+                viewModel.stopPlayback()
             }
         }
     }

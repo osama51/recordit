@@ -1,10 +1,12 @@
 package com.toddler.recordit.screens.record
 
 import android.content.Context
+import android.health.connect.datatypes.Record
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.google.gson.Gson
+import com.toddler.recordit.R
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.utils.pathConfig
@@ -25,18 +27,14 @@ class ImageRecordingViewModel @Inject constructor(
 
 //    private val context = WeakReference(application.applicationContext)
 
-    val itemList = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
-        var imageName = imageMap.entries.first().key
-        imageName = imageName.dropLast(4).capitalizeWords()
-        Log.i("RecordScreen", "itemList re-occupied !!")
-        RecordItem(
-            id = index,
-            title = imageName, //imageMap.toString().substring(7),
-            description = "Description ${imageName}",
-            imagePath = imageMap.entries.first().value,
-            recorded = false
-        )
-    }
+//    var itemList: List<RecordItem> = listOf()
+
+    private val _itemList = MutableStateFlow(listOf<RecordItem>())
+    val itemList: StateFlow<List<RecordItem>> = _itemList
+
+    private val _currentItem = MutableStateFlow<RecordItem?>(null)
+    val currentItem: StateFlow<RecordItem?> = _currentItem
+
 
     private val audioRecorder = AndroidAudioRecorder(context)
     private val audioPlayer = AndroidAudioPlayer(context)
@@ -63,20 +61,74 @@ class ImageRecordingViewModel @Inject constructor(
     // State flows and other properties remain the same
 
     init {
-        _numberOfImages.value = itemList.size
+        initializeItemList()
+
+        _numberOfImages.value = itemList.value.size
         determineNumberOfImagesRecorded()
         determineNumberOfImagesNotRecorded()
 
+        updateCurrentItem()
+    }
+
+    fun updateCurrentItem() {
+        // set current item as first item not recorded
+        _currentItem.value = _itemList.value.firstOrNull { !it.recorded } ?: _itemList.value.last()
+
+        /**
+         * If no matching element is found, it returns null instead of throwing an exception.
+         * This allows for safer and more graceful handling of cases where no suitable element exists.
+         *
+         * */
+
+        _audioFile.value = returnFile()
+        Log.i("RecordScreen", "updateCurrentItem() called | ${_currentItem.value}")
+    }
+
+    private fun initializeItemList() {
+        if (checkIfFileExists(JSON_FILE_NAME)) {
+            loadItemListFromJson()
+        } else {
+            createItemList()
+        }
+    }
+
+    private fun createItemList() {
+        _itemList.value = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
+            var imageName = imageMap.entries.first().key
+            imageName = imageName.dropLast(4).capitalizeWords()
+            Log.i("RecordScreen", "itemList re-occupied !!")
+            RecordItem(
+                id = index,
+                title = imageName, //imageMap.toString().substring(7),
+                description = "Description ${imageName}",
+                imagePath = imageMap.entries.first().value,
+                recorded = false
+            )
+        }
+    }
+
+    fun updateItemList(item: RecordItem) {
+        val updatedItemList = _itemList.value.map {
+            if (it.id == item.id) {
+                it.copy(recorded = item.recorded)
+            } else {
+                it
+            }
+        }
+        _itemList.value = updatedItemList
+        Log.i("RecordScreen", "itemList updated !!")
+        determineNumberOfImagesRecorded()
+        determineNumberOfImagesNotRecorded()
     }
 
 
     fun determineNumberOfImagesRecorded() {
-        _numberOfImagesRecorded.value = itemList.filter { it.recorded }.size
+        _numberOfImagesRecorded.value = _itemList.value.filter { it.recorded }.size
         Log.i("RecordScreen", "determineNumberOfImagesRecorded() called | ${_numberOfImagesRecorded.value}")
     }
 
     fun determineNumberOfImagesNotRecorded() {
-        _numberOfImagesNotRecorded.value = itemList.filter { !it.recorded }.size
+        _numberOfImagesNotRecorded.value = _itemList.value.filter { !it.recorded }.size
         Log.i("RecordScreen", "determineNumberOfImagesNotRecorded() called | ${_numberOfImagesNotRecorded.value}")
     }
 
@@ -99,13 +151,13 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun stopRecording() {
         // wait for a delay to ensure the file is written
-        Thread.sleep(500)
+        Thread.sleep(200)
         audioRecorder.stop()
         _isRecording.value = false
         Log.i("RecordScreen", "Stopped Recording | Recording: ${_recordedFilePath.value}")
     }
 
-    fun startPlayback(file: File) {
+    fun startPlayback() {
         try {
             audioPlayer.playFile(_audioFile.value ?: return)
             audioPlayer.triggerWhenFinished {
@@ -128,8 +180,17 @@ class ImageRecordingViewModel @Inject constructor(
         audioPlayer.stop()
     }
 
+    fun returnFile(): File{
+        var file: File? = null
+        returnUri(_currentItem.value!!.title).path?.let {
+            File(
+                it
+            )
+        }?.let { file = it }
+        return file!!
+    }
 
-    fun returnUri(imageTitle: String): Uri {
+    private fun returnUri(imageTitle: String): Uri {
 //        viewModelScope.launch{
 //        val pathConfig = pathConfig(suffix = imageTitle.replace(" ", "_"))
 //        // set the Uri of the file from the csvConfig hostPath and fileName
@@ -147,8 +208,8 @@ class ImageRecordingViewModel @Inject constructor(
     // save ItemList to json file using gson library
     fun saveItemListToJson(){
         val gson = Gson()
-        val json = gson.toJson(itemList)
-        val file = File(context.filesDir, "itemList.json")
+        val json = gson.toJson(_itemList.value)
+        val file = File(context.filesDir, JSON_FILE_NAME)
         file.writeText(json)
         Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
     }
@@ -156,11 +217,17 @@ class ImageRecordingViewModel @Inject constructor(
     // load ItemList from json file using gson library
     fun loadItemListFromJson(){
         val gson = Gson()
-        val file = File(context.filesDir, "itemList.json")
+        val file = File(context.filesDir, JSON_FILE_NAME)
         val json = file.readText()
         val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
         Log.i("RecordScreen", "itemList loaded from json | ${file.absolutePath}")
         Log.i("RecordScreen", "itemList loaded from json | ${itemListFromJson}")
+        _itemList.value = itemListFromJson
+    }
+
+    private fun checkIfFileExists(fileName: String): Boolean {
+        val file = File(context.filesDir, fileName)
+        return file.exists()
     }
 
     // function to take a string, replace underscores with spaces, and capitalize each word
@@ -170,6 +237,10 @@ class ImageRecordingViewModel @Inject constructor(
                 Locale.ROOT
             ) else firstChar.toString()
         }
+    }
+
+    companion object {
+        const val JSON_FILE_NAME = "itemList.json"
     }
 
 }

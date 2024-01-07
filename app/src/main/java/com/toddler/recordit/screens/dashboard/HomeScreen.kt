@@ -64,7 +64,7 @@ fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit
 
     val context = LocalContext.current
     Log.i("HomeScreen", "HomeScreen RECOMPOSED !!")
-    val itemList = viewModel.itemList
+//    val itemList = viewModel.itemList.collectAsState().value
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -176,7 +176,7 @@ fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit
                 contentPadding = PaddingValues(horizontal = 32.dp),
                 pageSpacing = 16.dp, state = pagerState
             ) { page ->
-                CarouselItem(context, itemList[page])
+                CarouselItem(context, viewModel.itemList.collectAsState().value[page])
             }
             Text(
                 text = "Total Images: $numberOfImages",
