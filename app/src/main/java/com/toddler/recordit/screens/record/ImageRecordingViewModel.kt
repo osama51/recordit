@@ -41,6 +41,12 @@ class ImageRecordingViewModel @Inject constructor(
     private val audioRecorder = AndroidAudioRecorder(context)
     private val audioPlayer = AndroidAudioPlayer(context)
 
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying
+
+    private val _buttonIcon = MutableStateFlow(R.drawable.ic_play)
+    val buttonIcon: StateFlow<Int> = _buttonIcon
+
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording
 
@@ -88,6 +94,9 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     fun navigateToNextItem(){
+        if(isPlaying()){
+            stopPlayback()
+        }
         /**
          *لا تنسي أخاك, ترعاه يداك
          * لا تنسي أخاك, ترعاه يداك
@@ -98,6 +107,9 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     fun navigateToPreviousItem(){
+        if(isPlaying()){
+            stopPlayback()
+        }
         /**
          *لا تنسي أخاك, ترعاه يداك
          * لا تنسي أخاك, ترعاه يداك
@@ -195,8 +207,11 @@ class ImageRecordingViewModel @Inject constructor(
     fun startPlayback() {
         try {
             audioPlayer.playFile(_audioFile.value ?: return)
+            _buttonIcon.value = R.drawable.ic_stop
             audioPlayer.triggerWhenFinished {
                 Log.i("RecordScreen", "Finished Playing")
+                _buttonIcon.value = R.drawable.ic_play
+                updateIsPlaying()
             }
         } catch (e: Exception) {
             // Handle playback errors
@@ -207,12 +222,19 @@ class ImageRecordingViewModel @Inject constructor(
         return audioPlayer.isPlaying()
     }
 
+    fun updateIsPlaying(){
+        _isPlaying.value = audioPlayer.isPlaying()
+    }
+
     fun triggerWhenFinished(callback: () -> Unit) {
         audioPlayer.triggerWhenFinished(callback)
+        updateIsPlaying()
     }
 
     fun stopPlayback() {
         audioPlayer.stop()
+        _buttonIcon.value = R.drawable.ic_play
+        updateIsPlaying()
     }
 
     fun returnFile(): File{

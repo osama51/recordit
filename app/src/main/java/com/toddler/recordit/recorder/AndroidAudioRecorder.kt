@@ -36,10 +36,21 @@ class AndroidAudioRecorder(
     }
 
     override fun stop() {
+        Log.i("AndroidAudioRecorder", "$recorder")
         recorder?.apply {
-            Log.i("AndroidAudioRecorder", "$recorder")
-            stop()
-            reset()
+            try{
+                stop()
+                reset()
+            } catch (e: Exception){
+                Log.e("AndroidAudioRecorder", "Error stopping recorder", e)
+                Thread.sleep(300)
+                try {
+                    stop()
+                    reset()
+                } catch (e: Exception){
+                    Log.e("AndroidAudioRecorder", "Error stopping recorder again", e)
+                }
+            }
         }
         recorder = null
 

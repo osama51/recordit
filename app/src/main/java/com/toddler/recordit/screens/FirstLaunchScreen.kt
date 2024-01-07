@@ -167,7 +167,7 @@ fun FirstLaunchScreen(startDashboard: () -> Unit) {
                         defaultElevation = 10.dp
                     )
                 ) {
-                    Text(text = "Sign up")
+                    Text(text = "Submit")
                 }
             }
 
