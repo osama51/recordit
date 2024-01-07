@@ -145,8 +145,8 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
             HomeScreen(viewModel = hiltViewModel,
                 startRecordScreen = {
                     navController.navigate(Record.route) {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
+//                        popUpTo(navController.graph.startDestinationId)
+//                        launchSingleTop = true
                     }
                 })
 //                    currentScreen.intValue = Screen.Dashboard.ordinal
