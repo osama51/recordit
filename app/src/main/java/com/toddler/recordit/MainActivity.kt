@@ -173,15 +173,15 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
 }
 
 /**
- * Navigation compose version "2.7.6" adds that AnimatedContentScrope thing to the composeable
- * also it appears the the multiple recomposition is occuring only with that version
+ * Navigation compose version "2.7.6" adds that AnimatedContentScope thing to the composable
+ * also it appears the the multiple recomposition is occurring only with that version
  * now I'm running version "2.5.2" and does not have that issue, at least not in the layout inspector.
  * although by observation, the recomposition is occurring slightly (if you pay attention).
  * also it's worth mentioning that the current multiple-recomposition issue is as of its current state:
  * 1. recompose current screen
  * 2. recompose destination screen
  * 3. recompose destination screen
- * this patter is the best so far and is existing in the ComposableUI project that was created during coursera course.
+ * this pattern is the best so far and was sadly existing in the ComposableUI project that was created during coursera course.
  *
  * */
 

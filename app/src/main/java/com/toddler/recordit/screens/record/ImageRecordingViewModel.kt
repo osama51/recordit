@@ -35,6 +35,8 @@ class ImageRecordingViewModel @Inject constructor(
     private val _currentItem = MutableStateFlow<RecordItem?>(null)
     val currentItem: StateFlow<RecordItem?> = _currentItem
 
+    private val _currentItemIndex = MutableStateFlow(0)
+    val currentItemIndex: StateFlow<Int> = _currentItemIndex
 
     private val audioRecorder = AndroidAudioRecorder(context)
     private val audioPlayer = AndroidAudioPlayer(context)
@@ -70,9 +72,10 @@ class ImageRecordingViewModel @Inject constructor(
         updateCurrentItem()
     }
 
-    fun updateCurrentItem() {
+    private fun updateCurrentItem() {
         // set current item as first item not recorded
         _currentItem.value = _itemList.value.firstOrNull { !it.recorded } ?: _itemList.value.last()
+        _currentItemIndex.value = _itemList.value.indexOf(_currentItem.value)
 
         /**
          * If no matching element is found, it returns null instead of throwing an exception.
@@ -82,6 +85,38 @@ class ImageRecordingViewModel @Inject constructor(
 
         _audioFile.value = returnFile()
         Log.i("RecordScreen", "updateCurrentItem() called | ${_currentItem.value}")
+    }
+
+    fun navigateToNextItem(){
+        /**
+         *لا تنسي أخاك, ترعاه يداك
+         * لا تنسي أخاك, ترعاه يداك
+         *
+         * */
+        _currentItem.value = _itemList.value[_currentItemIndex.value + 1]
+        _audioFile.value = returnFile()
+    }
+
+    fun navigateToPreviousItem(){
+        /**
+         *لا تنسي أخاك, ترعاه يداك
+         * لا تنسي أخاك, ترعاه يداك
+         *
+         * */
+        _currentItem.value = _itemList.value[_currentItemIndex.value - 1]
+        _audioFile.value = returnFile()
+    }
+
+    fun canNavigateToNextItem(): Boolean {
+        _currentItemIndex.value = _itemList.value.indexOf(_currentItem.value)
+        // check if it's the last item and if it is not recorded (both conditions prevent going to next item)
+        return _currentItemIndex.value != _itemList.value.lastIndex && _itemList.value[_currentItemIndex.value].recorded
+    }
+
+    fun canNavigateToPreviousItem(): Boolean {
+        _currentItemIndex.value = _itemList.value.indexOf(_currentItem.value)
+        // check if it's the first item
+        return _currentItemIndex.value != 0
     }
 
     private fun initializeItemList() {
@@ -151,7 +186,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun stopRecording() {
         // wait for a delay to ensure the file is written
-        Thread.sleep(200)
+        Thread.sleep(500)
         audioRecorder.stop()
         _isRecording.value = false
         Log.i("RecordScreen", "Stopped Recording | Recording: ${_recordedFilePath.value}")
@@ -205,7 +240,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     // onCleared() for resource release
 
-    // save ItemList to json file using gson library
+    // note that I'm using gson
     fun saveItemListToJson(){
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
@@ -214,7 +249,7 @@ class ImageRecordingViewModel @Inject constructor(
         Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
     }
 
-    // load ItemList from json file using gson library
+
     fun loadItemListFromJson(){
         val gson = Gson()
         val file = File(context.filesDir, JSON_FILE_NAME)

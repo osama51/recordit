@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +78,7 @@ import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
 import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
+import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.White
 import com.toddler.recordit.utils.getImagesFromAssets
@@ -103,8 +106,9 @@ fun ScreenContent(
 
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 
-    val item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(viewModel.currentItem.value!!) }
+//    val item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(viewModel.currentItem.value!!) }
 
+    val item = viewModel.currentItem.collectAsState().value!!
     val drawable by lazy {
         Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
 
@@ -226,7 +230,8 @@ fun ScreenContent(
                         .fillMaxWidth()
                         .fillMaxHeight()
                         .padding(0.dp)
-                        .align(Alignment.Center)
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp),
 //                .shadow(
 //                    elevation = 28.dp,
 //                    shape = RoundedCornerShape(0.dp),
@@ -238,88 +243,125 @@ fun ScreenContent(
 //                        },
                 ) {
 
-                    Column(
+                    var canGoNext = viewModel.canNavigateToNextItem()
+                    var canGoPrevious = viewModel.canNavigateToPreviousItem()
+                    Row(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween,
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val pressed by interactionSource.collectIsPressedAsState()
-                        var recorded by remember { mutableStateOf(item.recorded) }
-//                        val isRecording by remember { mutableStateOf(viewModel.isRecording.value) }
-                        var isRecordingLocal by remember { mutableStateOf(false) }
-//                        val audioFile = File(context.cacheDir, "audio.mp3")
-
-                        var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
-                        var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
-
-
                         Box(
                             modifier = Modifier
-                                .padding(14.dp)
-                                .size(7.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(if (isRecordingLocal) Color.Red else Color.Transparent)
-                        )
-
-                        ElevatedButton(
-                            modifier = Modifier
-                                .padding(14.dp)
-                                .size(72.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-//                                .align(Alignment.TopCenter)
-                                    ,
-                            contentPadding = PaddingValues(16.dp),
-                            elevation = ButtonDefaults.buttonElevation(12.dp),
-                            colors = ButtonDefaults.elevatedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = NavyDark,
-                            ),
-                            interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
-                            onClick = { },
+                                .weight(1f)
+                                .fillMaxHeight(),
                         ) {
-//                            if (pressed && !isPlaying) {
-//                                isRecordingLocal = true
-//                                viewModel.startRecording(viewModel.returnFile())
-////                    viewModel.startRecording(audioFile)
-//                                Log.i("RecordScreen", "I'm pressed and am recording")
-//
-//                                DisposableEffect(Unit) {
-//                                    onDispose {
-//                                        if(viewModel.isRecording()){
-//                                            //released
-//                                            isRecordingLocal = false
-//                                            Log.i("RecordScreen", "I'm not pressed and I stopped recording")
-//                                            viewModel.stopRecording()
-//
-//                                            item.recorded = true
-//                                            viewModel.updateItemList(item)
-//                                            recorded = true
-//                                        }
-//                                    }
-//                                }
-//                            }
-                            Box(modifier = Modifier
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = {  },
+                            if (canGoPrevious) {
+                                IconButton(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    onClick = { viewModel.navigateToPreviousItem() },
+                                    content = {
+                                        Icon(
+                                            modifier = Modifier
+                                                .size(30.dp),
+                                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_arrow_left),
+                                            contentDescription = "Previous-item icon",
+                                            tint = OffWhite,
+                                        )
+                                    },
                                 )
-                            .fillMaxSize().pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        Log.i("RecordScreen", "I'm pressed")
-                                        try {
-                                            if (!isPlaying) {
-                                                isRecordingLocal = true
-                                                viewModel.startRecording(viewModel.returnFile())
+                            }
+                        }
 
-                                                Log.i(
-                                                    "RecordScreen",
-                                                    "I'm pressed and am recording"
-                                                )
-                                            }
-                                            awaitRelease()
-                                        } finally {
+                        Column(
+                            modifier = Modifier
+                                .weight(4f)
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.SpaceAround,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val pressed by interactionSource.collectIsPressedAsState()
+                            var recorded by remember { mutableStateOf(item.recorded) }
+//                        val isRecording by remember { mutableStateOf(viewModel.isRecording.value) }
+                            var isRecordingLocal by remember { mutableStateOf(false) }
+//                        val audioFile = File(context.cacheDir, "audio.mp3")
+
+                            var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
+                            var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
+
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(if (isRecordingLocal) Color.Red else Color.Transparent)
+                            )
+
+                            ElevatedButton(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+//                                .align(Alignment.TopCenter)
+//                                .pointerInput(Unit) {
+//                                    Log.i("RecordScreen", "I'm pointerInput")
+//                                    detectTapGestures(
+//                                        onPress = {
+//                                            Log.i("RecordScreen", "I'm pressed")
+//                                            try {
+//                                                if (!isPlaying) {
+//                                                    isRecordingLocal = true
+//                                                    viewModel.startRecording(viewModel.returnFile())
+//
+//                                                    Log.i(
+//                                                        "RecordScreen",
+//                                                        "I'm pressed and am recording"
+//                                                    )
+//                                                }
+//                                                awaitRelease()
+//                                            } finally {
+//                                                if (viewModel.isRecording()) {
+//                                                    //released
+//                                                    isRecordingLocal = false
+//                                                    Log.i(
+//                                                        "RecordScreen",
+//                                                        "I'm not pressed and I stopped recording"
+//                                                    )
+//                                                    viewModel.stopRecording()
+//
+//                                                    item.recorded = true
+//                                                    viewModel.updateItemList(item)
+//                                                    recorded = true
+//
+//                                                    viewModel.saveItemListToJson()
+//                                                }
+//                                            }
+//                                        },
+//                                        onTap = {
+//                                            Log.i("RecordScreen", "I'm tapped")
+//                                        },
+//                                    )
+//                                }
+                                contentPadding = PaddingValues(16.dp),
+                                elevation = ButtonDefaults.buttonElevation(12.dp),
+                                colors = ButtonDefaults.elevatedButtonColors(
+                                    containerColor = Color.White,
+                                    contentColor = NavyDark,
+                                ),
+                                interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
+                                onClick = { },
+                            ) {
+                                if (pressed && !isPlaying) {
+                                    LaunchedEffect(Unit) {
+                                        isRecordingLocal = true
+                                        viewModel.startRecording(viewModel.returnFile())
+//                    viewModel.startRecording(audioFile)
+                                        Log.i("RecordScreen", "I'm pressed and am recording")
+                                    }
+
+                                    DisposableEffect(Unit) {
+                                        onDispose {
                                             if (viewModel.isRecording()) {
                                                 //released
                                                 isRecordingLocal = false
@@ -333,79 +375,100 @@ fun ScreenContent(
                                                 viewModel.updateItemList(item)
                                                 recorded = true
 
+                                                canGoNext = viewModel.canNavigateToNextItem()
+                                                canGoPrevious =
+                                                    viewModel.canNavigateToPreviousItem()
+
                                                 viewModel.saveItemListToJson()
                                             }
                                         }
-                                    },
-                                    onTap = {
-                                        Log.i("RecordScreen", "I'm tapped")
-                                    },
-                                )
-                            },) {
+                                    }
+                                }
 
-                            Icon(
-                                modifier = Modifier
-                                    .size(60.dp),
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
-                                contentDescription = "Record",
-                                tint = NavyDark,
-                            )
+                                Icon(
+                                    modifier = Modifier
+                                        .size(60.dp),
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_mic_filled_54),
+                                    contentDescription = "Record icon",
+                                    tint = NavyDark,
+                                )
+
                             }
 
-                        }
 
 
-
-                        Box(
-                            modifier = Modifier
-                                .padding(14.dp)
-                                .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
 //                                .align(Alignment.BottomCenter)
-                        ) {
+                            ) {
 
-                            if (recorded) {
-                                ElevatedButton(
-                                    modifier = Modifier
-                                        .padding(14.dp)
-                                        .size(60.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-                                        .align(Alignment.BottomCenter),
-                                    contentPadding = PaddingValues(8.dp),
+                                if (recorded) {
+                                    ElevatedButton(
+                                        modifier = Modifier
+                                            .padding(8.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                            .align(Alignment.BottomCenter),
+                                        contentPadding = PaddingValues(12.dp),
 //                                    elevation = ButtonDefaults.buttonElevation(12.dp),
-                                    colors = ButtonDefaults.elevatedButtonColors(
-                                        containerColor = Color.Transparent,
-                                        contentColor = NavyDark,
-                                    ),
-                                    onClick = {
+                                        colors = ButtonDefaults.elevatedButtonColors(
+                                            containerColor = Color.Transparent,
+                                            contentColor = NavyDark,
+                                        ),
+                                        onClick = {
 //                            val inputStream = context.contentResolver.openInputStream(
 //                                viewModel.returnUri(item.title)
 //                            )
-                                        viewModel.apply {
-                                            buttonIcon = if (!isPlaying) {
-                                                startPlayback()
-                                                R.drawable.ic_stop
-                                            } else {
-                                                stopPlayback()
-                                                R.drawable.ic_play
+                                            viewModel.apply {
+                                                buttonIcon = if (!isPlaying) {
+                                                    startPlayback()
+                                                    R.drawable.ic_stop
+                                                } else {
+                                                    stopPlayback()
+                                                    R.drawable.ic_play
+                                                }
                                             }
-                                        }
-                                        isPlaying = !isPlaying
+                                            isPlaying = !isPlaying
 
-                                        viewModel.triggerWhenFinished {
-                                            buttonIcon = R.drawable.ic_play
-                                            isPlaying = false
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        modifier = Modifier
-                                            .size(60.dp),
-                                        imageVector = ImageVector.vectorResource(id = buttonIcon),
-                                        contentDescription = "Play/Stop Icon",
-                                        tint = White,
-                                    )
+                                            viewModel.triggerWhenFinished {
+                                                buttonIcon = R.drawable.ic_play
+                                                isPlaying = false
+                                            }
+                                        },
+                                    ) {
+                                        Icon(
+                                            modifier = Modifier
+                                                .size(60.dp),
+                                            imageVector = ImageVector.vectorResource(id = buttonIcon),
+                                            contentDescription = "Play/Stop Icon",
+                                            tint = White,
+                                        )
+                                    }
                                 }
-                            }
 
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                        ) {
+                            if(canGoNext) {
+                                IconButton(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    onClick = { viewModel.navigateToNextItem() },
+                                    content = {
+                                        Icon(
+                                            modifier = Modifier
+                                                .size(30.dp),
+                                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_arrow_right),
+                                            contentDescription = "Next-item icon",
+                                            tint = OffWhite,
+                                        )
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -435,7 +498,7 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
         imageModel = { imageDrawable },
         component = rememberImageComponent {
             +CrossfadePlugin(duration = 1000)
-            +BlurTransformationPlugin(radius = 50) // between 0 to Int.MAX_VALUE.
+            +BlurTransformationPlugin(radius = 20) // between 0 to Int.MAX_VALUE.
 //                        // shows a shimmering effect when loading an image.
 //                        +ShimmerPlugin(
 //                            baseColor = Color.DarkGray,

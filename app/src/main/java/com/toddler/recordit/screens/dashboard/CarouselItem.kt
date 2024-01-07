@@ -83,13 +83,13 @@ fun CarouselItem(context: Context, item: RecordItem) {
                 .height(cardHeight)
                 .fillMaxSize()
             ,
-            // shows a progress indicator when loading an image.
+            // progress indicator when loading an image.
             loading = {
                 Box(Modifier.fillMaxSize()) {
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
             },
-            // shows an error text message when request failed.
+            // error text message when request failed.
             failure = @Composable {
                 Text(text = "image request failed.")
             },
