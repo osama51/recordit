@@ -287,8 +287,8 @@ fun ScreenContent(
                             var isRecordingLocal by remember { mutableStateOf(false) }
 //                        val audioFile = File(context.cacheDir, "audio.mp3")
 
-                            var isPlaying by rememberSaveable { mutableStateOf(viewModel.isPlaying()) }
-                            var buttonIcon by rememberSaveable { mutableIntStateOf(R.drawable.ic_play) }
+                            var isPlaying = viewModel.isPlaying.collectAsState().value
+                            var buttonIcon = viewModel.buttonIcon.collectAsState().value
 
 
                             Box(
@@ -416,23 +416,12 @@ fun ScreenContent(
                                             contentColor = NavyDark,
                                         ),
                                         onClick = {
-//                            val inputStream = context.contentResolver.openInputStream(
-//                                viewModel.returnUri(item.title)
-//                            )
                                             viewModel.apply {
-                                                buttonIcon = if (!isPlaying) {
+                                                if (!isPlaying) {
                                                     startPlayback()
-                                                    R.drawable.ic_stop
                                                 } else {
                                                     stopPlayback()
-                                                    R.drawable.ic_play
                                                 }
-                                            }
-                                            isPlaying = !isPlaying
-
-                                            viewModel.triggerWhenFinished {
-                                                buttonIcon = R.drawable.ic_play
-                                                isPlaying = false
                                             }
                                         },
                                     ) {
