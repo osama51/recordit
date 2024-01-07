@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.toddler.recordit.MainActivity.Companion.checkIfUserNameExists
 import com.toddler.recordit.MainActivity.Companion.isFirstLaunch
 import com.toddler.recordit.MainActivity.Companion.noMoreFirstLaunch
 import com.toddler.recordit.playback.AndroidAudioPlayer
@@ -62,6 +63,10 @@ class MainActivity : ComponentActivity() {
             return sharedPreferences.getBoolean("isFirstLaunch", true)
         }
 
+        fun checkIfUserNameExists(): Boolean {
+            return sharedPreferences.getString("userName", null) != null
+        }
+
         fun noMoreFirstLaunch() {
             // Mark first launch as complete
             sharedPreferences.edit().putBoolean("isFirstLaunch", false).apply()
@@ -79,12 +84,17 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
         if (recordPermissionCheck == PERMISSION_GRANTED
-            && storagePermissionCheck == PERMISSION_GRANTED) {
+            && storagePermissionCheck == PERMISSION_GRANTED
+        ) {
             // you have the permission, proceed to record audio
         } else {
             // you don't have permission, try requesting for it
             ActivityCompat.requestPermissions(
-                this, arrayOf<String>(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                this,
+                arrayOf<String>(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
                 MY_PERMISSION_REQUEST_RECORD_AUDIO_AND_STORAGE
             )
         }
@@ -112,7 +122,7 @@ class MainActivity : ComponentActivity() {
 }
 
 fun determineInitialRoute(): String {
-    return if (isFirstLaunch()) {
+    return if (isFirstLaunch() || !checkIfUserNameExists()) {
         noMoreFirstLaunch()
         LogIn.route
     } else {
@@ -142,15 +152,18 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
 //                    }
 //                    val parentViewModel = hiltViewModel<ImageRecordingViewModel>(parentEntry)
             Log.i("MainActivity", "Dashboard route")
-            HomeScreen(viewModel = hiltViewModel,
+            HomeScreen(
+                viewModel = hiltViewModel,
                 startRecordScreen = {
                     navController.navigate(Record.route) {
 //                        popUpTo(navController.graph.startDestinationId)
 //                        launchSingleTop = true
                     }
-                })
-//                    currentScreen.intValue = Screen.Dashboard.ordinal
+                },
+                startLogInScreen = { navController.navigate(LogIn.route) }
+            )
         }
+
         composable(Record.route) {
 //                    backStackEntry ->
 //                    val parentEntry = remember(backStackEntry) {
@@ -166,7 +179,14 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
         }
         composable(LogIn.route) {
             Log.i("MainActivity", "LogIn route")
-            FirstLaunchScreen(navController)
+            FirstLaunchScreen(
+                startDashboard = {
+                    navController.navigate(Dashboard.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
     }
