@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,11 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,10 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
-import androidx.navigation.NavHostController
-import com.google.firebase.auth.FirebaseAuth
+import com.toddler.recordit.MainActivity
 import com.toddler.recordit.R
-import com.toddler.recordit.Record
 import com.toddler.recordit.screens.record.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.Abel
 import com.toddler.recordit.ui.theme.OffWhite
@@ -58,7 +53,11 @@ import com.toddler.recordit.ui.theme.Russo
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit) {
+fun HomeScreen(
+    viewModel: ImageRecordingViewModel,
+    startRecordScreen: () -> Unit,
+    startLogInScreen: () -> Unit
+) {
     // this val should be an argument passed not initiated here
 //    val value: FirebaseAuth
 
@@ -73,7 +72,6 @@ fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit
         val numberOfImages = viewModel.numberOfImages.collectAsState().value
         viewModel.determineNumberOfImagesNotRecorded()
         val numberOfImagesNotRecorded = viewModel.numberOfImagesNotRecorded.collectAsState().value
-
 
         val pagerState = rememberPagerState(
             initialPage = 0,
@@ -191,6 +189,25 @@ fun HomeScreen(viewModel: ImageRecordingViewModel, startRecordScreen: () -> Unit
                     .align(Alignment.CenterHorizontally)
                     .weight(0.3f)
             )
+            val userName = MainActivity.sharedPreferences.getString("userName", null)
+            Text(
+                text = "User: $userName",
+                fontFamily = Russo,
+                fontSize = 18.sp,
+                style = TextStyle(
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Light,
+                ),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .weight(0.3f),
+
+            )
+            TextButton(onClick = { startLogInScreen() }) {
+                Text(text = "Edit User")
+            }
+            
             Box(
                 modifier = Modifier
                     .weight(0.7f)

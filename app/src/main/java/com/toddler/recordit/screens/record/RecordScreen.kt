@@ -282,7 +282,7 @@ fun ScreenContent(
                         ) {
                             val interactionSource = remember { MutableInteractionSource() }
                             val pressed by interactionSource.collectIsPressedAsState()
-                            var recorded by remember { mutableStateOf(item.recorded) }
+                            val recorded = viewModel.currentItem.collectAsState().value!!.recorded
 //                        val isRecording by remember { mutableStateOf(viewModel.isRecording.value) }
                             var isRecordingLocal by remember { mutableStateOf(false) }
 //                        val audioFile = File(context.cacheDir, "audio.mp3")
@@ -373,7 +373,7 @@ fun ScreenContent(
 
                                                 item.recorded = true
                                                 viewModel.updateItemList(item)
-                                                recorded = true
+//                                                recorded = true
 
                                                 canGoNext = viewModel.canNavigateToNextItem()
                                                 canGoPrevious =
