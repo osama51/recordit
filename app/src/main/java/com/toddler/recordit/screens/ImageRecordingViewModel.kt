@@ -182,7 +182,7 @@ class ImageRecordingViewModel @Inject constructor(
     fun startRecording(outputFile: File) {
         try {
             audioRecorder.start(outputFile)
-            Log.i("RecordScreen", "Started Recording | Recording: ${_recordedFilePath.value}")
+            Log.i("RecordScreen", "Started Recording")
             _recordedFilePath.value =
                 outputFile.absolutePath
             _audioFile.value = outputFile
@@ -198,7 +198,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun stopRecording() {
         // wait for a delay to ensure the file is written
-        Thread.sleep(500)
+//        Thread.sleep(500) // instead, checked the press duration and added coroutine delay
         audioRecorder.stop()
         _isRecording.value = false
         Log.i("RecordScreen", "Stopped Recording | Recording: ${_recordedFilePath.value}")
@@ -222,7 +222,7 @@ class ImageRecordingViewModel @Inject constructor(
         return audioPlayer.isPlaying()
     }
 
-    fun updateIsPlaying(){
+    private fun updateIsPlaying(){
         _isPlaying.value = audioPlayer.isPlaying()
     }
 

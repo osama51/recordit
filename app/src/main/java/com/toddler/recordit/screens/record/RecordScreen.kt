@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,9 @@ import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.White
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
@@ -78,6 +82,7 @@ fun ScreenContent(
 ) {
 
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+    val minimumPressTime = 500
 
 //    val item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(viewModel.currentItem.value!!) }
 
@@ -195,7 +200,6 @@ fun ScreenContent(
                     .fillMaxWidth(),
             ) {
                 Card(
-
                     colors = CardDefaults.cardColors(
                         containerColor = DarkGrayHalfTransparent,
                     ),
@@ -215,14 +219,18 @@ fun ScreenContent(
 //                            alpha = 0.5f
 //                        },
                 ) {
-
-                    var canGoNext = viewModel.canNavigateToNextItem()
-                    var canGoPrevious = viewModel.canNavigateToPreviousItem()
+                    /*********************
+                     *
+                     * Lower Body Content
+                     *
+                     *********************/
                     Row(
                         modifier = Modifier.fillMaxSize(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        var canGoNext = viewModel.canNavigateToNextItem()
+                        var canGoPrevious = viewModel.canNavigateToPreviousItem()
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -260,8 +268,8 @@ fun ScreenContent(
                             var isRecordingLocal by remember { mutableStateOf(false) }
 //                        val audioFile = File(context.cacheDir, "audio.mp3")
 
-                            var isPlaying = viewModel.isPlaying.collectAsState().value
-                            var buttonIcon = viewModel.buttonIcon.collectAsState().value
+                            val isPlaying = viewModel.isPlaying.collectAsState().value
+                            val buttonIcon = viewModel.buttonIcon.collectAsState().value
 
 
                             Box(
@@ -272,50 +280,11 @@ fun ScreenContent(
                                     .background(if (isRecordingLocal) Color.Red else Color.Transparent)
                             )
 
+                            val coroutineScope = rememberCoroutineScope()
                             ElevatedButton(
                                 modifier = Modifier
                                     .padding(8.dp)
                                     .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
-//                                .align(Alignment.TopCenter)
-//                                .pointerInput(Unit) {
-//                                    Log.i("RecordScreen", "I'm pointerInput")
-//                                    detectTapGestures(
-//                                        onPress = {
-//                                            Log.i("RecordScreen", "I'm pressed")
-//                                            try {
-//                                                if (!isPlaying) {
-//                                                    isRecordingLocal = true
-//                                                    viewModel.startRecording(viewModel.returnFile())
-//
-//                                                    Log.i(
-//                                                        "RecordScreen",
-//                                                        "I'm pressed and am recording"
-//                                                    )
-//                                                }
-//                                                awaitRelease()
-//                                            } finally {
-//                                                if (viewModel.isRecording()) {
-//                                                    //released
-//                                                    isRecordingLocal = false
-//                                                    Log.i(
-//                                                        "RecordScreen",
-//                                                        "I'm not pressed and I stopped recording"
-//                                                    )
-//                                                    viewModel.stopRecording()
-//
-//                                                    item.recorded = true
-//                                                    viewModel.updateItemList(item)
-//                                                    recorded = true
-//
-//                                                    viewModel.saveItemListToJson()
-//                                                }
-//                                            }
-//                                        },
-//                                        onTap = {
-//                                            Log.i("RecordScreen", "I'm tapped")
-//                                        },
-//                                    )
-//                                }
                                 contentPadding = PaddingValues(16.dp),
                                 elevation = ButtonDefaults.buttonElevation(12.dp),
                                 colors = ButtonDefaults.elevatedButtonColors(
@@ -326,33 +295,41 @@ fun ScreenContent(
                                 onClick = { },
                             ) {
                                 if (pressed && !isPlaying) {
+                                    val currentMillis = System.currentTimeMillis()
                                     LaunchedEffect(Unit) {
-                                        isRecordingLocal = true
-                                        viewModel.startRecording(viewModel.returnFile())
-//                    viewModel.startRecording(audioFile)
-                                        Log.i("RecordScreen", "I'm pressed and am recording")
+                                        coroutineScope.launch {
+                                            isRecordingLocal = true
+                                            viewModel.startRecording(viewModel.returnFile())
+//                                            Log.i("RecordScreen", "I'm pressed and am recording")
+                                        }
                                     }
 
                                     DisposableEffect(Unit) {
                                         onDispose {
-                                            if (viewModel.isRecording()) {
-                                                //released
-                                                isRecordingLocal = false
-                                                Log.i(
-                                                    "RecordScreen",
-                                                    "I'm not pressed and I stopped recording"
-                                                )
-                                                viewModel.stopRecording()
+                                            val duration =
+                                                System.currentTimeMillis() - currentMillis
+                                            var delayTime = 0L
+                                            if (duration < minimumPressTime) {
+                                                // too short, add delay
+                                                delayTime = minimumPressTime - duration
+                                            }
+                                            coroutineScope.launch {
+                                                delay(delayTime)
+                                                if (viewModel.isRecording()) {
+                                                    //released
+                                                    isRecordingLocal = false
+                                                    viewModel.stopRecording()
 
-                                                item.recorded = true
-                                                viewModel.updateItemList(item)
+                                                    item.recorded = true
+                                                    viewModel.updateItemList(item)
 //                                                recorded = true
 
-                                                canGoNext = viewModel.canNavigateToNextItem()
-                                                canGoPrevious =
-                                                    viewModel.canNavigateToPreviousItem()
+                                                    canGoNext = viewModel.canNavigateToNextItem()
+                                                    canGoPrevious =
+                                                        viewModel.canNavigateToPreviousItem()
 
-                                                viewModel.saveItemListToJson()
+                                                    viewModel.saveItemListToJson()
+                                                }
                                             }
                                         }
                                     }
@@ -376,7 +353,6 @@ fun ScreenContent(
                                     .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
 //                                .align(Alignment.BottomCenter)
                             ) {
-
                                 if (recorded) {
                                     ElevatedButton(
                                         modifier = Modifier
@@ -415,7 +391,7 @@ fun ScreenContent(
                                 .weight(1f)
                                 .fillMaxHeight(),
                         ) {
-                            if(canGoNext) {
+                            if (canGoNext) {
                                 IconButton(
                                     modifier = Modifier
                                         .fillMaxSize(),
@@ -485,5 +461,6 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
 //            Text(text = "image request failed.")
 //        },
     )
+
 }
 
