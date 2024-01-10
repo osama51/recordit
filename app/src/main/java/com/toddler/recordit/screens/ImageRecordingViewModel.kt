@@ -1,6 +1,7 @@
 package com.toddler.recordit.screens
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -27,7 +28,11 @@ class ImageRecordingViewModel @Inject constructor(
 
 
     val applicationContext = context
-//    var itemList: List<RecordItem> = listOf()
+
+    val application = applicationContext as MyApplication
+
+    val sharedPreferences = application.getSharedPreferences(application.packageName, MODE_PRIVATE)
+
 
     private val _itemList = MutableStateFlow(listOf<RecordItem>())
     val itemList: StateFlow<List<RecordItem>> = _itemList
@@ -182,6 +187,10 @@ class ImageRecordingViewModel @Inject constructor(
     fun startRecording(outputFile: File) {
         try {
             audioRecorder.start(outputFile)
+            // check if audioRecorder started successfully
+
+
+
             Log.i("RecordScreen", "Started Recording")
             _recordedFilePath.value =
                 outputFile.absolutePath
@@ -253,10 +262,11 @@ class ImageRecordingViewModel @Inject constructor(
 //        // set the Uri of the file from the csvConfig hostPath and fileName
 //        val uri = Uri.parse("${pathConfig.hostPath}/${pathConfig.fileName}")
 //        Log.i("AssessViewModel", "Uri: $uri")
-        // instead, access the directory that the system provides for my app
-        val uri = Uri.parse("${context.filesDir}/${imageTitle.replace(" ", "_")}.mp3")
 
-        return uri
+        // instead, access the directory that the system provides for my app
+        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+
+        return Uri.parse("${context.filesDir}/${imageTitle.replace(" ", "_")}.mp3")
 //        }
     }
 
@@ -266,6 +276,7 @@ class ImageRecordingViewModel @Inject constructor(
     fun saveItemListToJson(){
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
+        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
         val file = File(context.filesDir, JSON_FILE_NAME)
         file.writeText(json)
         Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
@@ -274,15 +285,17 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun loadItemListFromJson(){
         val gson = Gson()
+        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
         val file = File(context.filesDir, JSON_FILE_NAME)
         val json = file.readText()
         val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
         Log.i("RecordScreen", "itemList loaded from json | ${file.absolutePath}")
-        Log.i("RecordScreen", "itemList loaded from json | ${itemListFromJson}")
+//        Log.i("RecordScreen", "itemList loaded from json | ${itemListFromJson}")
         _itemList.value = itemListFromJson
     }
 
     private fun checkIfFileExists(fileName: String): Boolean {
+        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
         val file = File(context.filesDir, fileName)
         return file.exists()
     }
@@ -297,8 +310,8 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     fun logOut() {
-        val application = applicationContext as MyApplication
         application.firebaseAuth.signOut()
+        sharedPreferences.edit().clear().apply()
     }
 
     companion object {
