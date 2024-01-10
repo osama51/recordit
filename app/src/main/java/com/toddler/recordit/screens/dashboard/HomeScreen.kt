@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,7 +60,8 @@ import com.toddler.recordit.ui.theme.Russo
 fun HomeScreen(
     viewModel: ImageRecordingViewModel,
     startRecordScreen: () -> Unit,
-    logOut: () -> Unit
+    logOut: () -> Unit,
+    requestPermissions: () -> Unit
 ) {
     // this val should be an argument passed not initiated here
 //    val value: FirebaseAuth
@@ -245,7 +245,10 @@ fun HomeScreen(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(24.dp),
-                        onClick = startRecordScreen,
+                        onClick = {
+                            requestPermissions()
+                            startRecordScreen()
+                                  },
                         containerColor = MaterialTheme.colorScheme.onPrimary,
                         contentColor = MaterialTheme.colorScheme.primary
                     )

@@ -41,7 +41,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sharedPreferences = getSharedPreferences("com.toddler.recordit", MODE_PRIVATE)
+        val packageName = applicationContext.packageName
+        sharedPreferences = getSharedPreferences(packageName, MODE_PRIVATE)
         setContent {
             RecordItTheme {
                 // A surface container using the 'background' color from the theme
@@ -71,6 +72,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun checkAndRequestPermissions(){
+        if(!checkRecordAndStoragePermissions()){
+            requestRecordAndStoragePermissions()
+        }
+    }
 
     private fun requestRecordAndStoragePermissions() {
         val recordPermissionCheck = ContextCompat.checkSelfPermission(
@@ -96,6 +102,19 @@ class MainActivity : ComponentActivity() {
                 MY_PERMISSION_REQUEST_RECORD_AUDIO_AND_STORAGE
             )
         }
+    }
+
+    fun checkRecordAndStoragePermissions(): Boolean {
+        val recordPermissionCheck = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        )
+        val storagePermissionCheck = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+        return recordPermissionCheck == PERMISSION_GRANTED
+                && storagePermissionCheck == PERMISSION_GRANTED
     }
 
 
@@ -158,6 +177,9 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
 //                        popUpTo(navController.graph.startDestinationId)
 //                        launchSingleTop = true
                     }
+                },
+                requestPermissions = {
+                    (context as MainActivity).checkAndRequestPermissions()
                 },
                 logOut = {
                     hiltViewModel.logOut()

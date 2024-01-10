@@ -59,7 +59,6 @@ import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.White
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -1,6 +1,7 @@
 package com.toddler.recordit
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -45,6 +46,8 @@ class LoginActivity : ComponentActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var launcher: ActivityResultLauncher<Intent>
 
+    private lateinit var sharedPreferences: SharedPreferences
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +73,9 @@ class LoginActivity : ComponentActivity() {
         val application = application as MyApplication
         firebaseAuth = application.firebaseAuth
 
+        val packageName = application.packageName
+        sharedPreferences = getSharedPreferences(packageName, MODE_PRIVATE)
+
         val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(SERVER_CLIENT_ID)
             .requestEmail()
@@ -80,7 +86,6 @@ class LoginActivity : ComponentActivity() {
 
 
         if (isSignedIn) {
-//            Toast.makeText(this, "Signed In", Toast.LENGTH_SHORT).show()
             val userName = firebaseAuth.currentUser?.displayName
             Toast.makeText(this, "Welcome $userName", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java))
@@ -119,7 +124,14 @@ class LoginActivity : ComponentActivity() {
                 val credential = GoogleAuthProvider.getCredential(account.idToken, null)
                 firebaseAuth.signInWithCredential(credential).addOnCompleteListener {
                     if(it.isSuccessful){
-                        Toast.makeText(this, "Signed In", Toast.LENGTH_SHORT).show()
+                        val idToken = account.idToken
+                        val accountId = account.id
+                        val uid = firebaseAuth.currentUser?.uid // safer than account.id and more simple than account.idToken
+                        Log.i(TAG, "handleTask: idToken = $idToken")
+                        Log.i(TAG, "handleTask: accountId = $accountId")
+                        Log.i(TAG, "handleTask: uid = $uid")
+                        sharedPreferences.edit().putString("uid", uid).apply()
+                        Toast.makeText(this, "Welcome ${account.displayName}", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this, MainActivity::class.java))
                         finish()
                     } else {
