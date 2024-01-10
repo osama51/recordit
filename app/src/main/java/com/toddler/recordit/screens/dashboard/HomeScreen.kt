@@ -98,7 +98,6 @@ fun HomeScreen(
 
 
         ModalNavigationDrawer(
-            modifier = Modifier.width(240.dp),
             drawerContent = {
                 ModalDrawerSheet {
                     Text(
