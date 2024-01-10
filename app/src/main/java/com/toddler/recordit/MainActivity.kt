@@ -1,6 +1,7 @@
 package com.toddler.recordit
 
 import android.Manifest
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -8,7 +9,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
@@ -16,14 +17,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.toddler.recordit.MainActivity.Companion.checkIfUserNameExists
-import com.toddler.recordit.MainActivity.Companion.isFirstLaunch
-import com.toddler.recordit.MainActivity.Companion.noMoreFirstLaunch
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.FirstLaunchScreen
 import com.toddler.recordit.screens.dashboard.HomeScreen
-import com.toddler.recordit.screens.record.ImageRecordingViewModel
+import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -121,21 +119,22 @@ class MainActivity : ComponentActivity() {
 
 }
 
-fun determineInitialRoute(): String {
-    return if (isFirstLaunch() || !checkIfUserNameExists()) {
-        noMoreFirstLaunch()
-        LogIn.route
-    } else {
-        Dashboard.route
-    }
-}
+//fun determineInitialRoute(): String {
+//    return if (isFirstLaunch() || !checkIfUserNameExists()) {
+//        noMoreFirstLaunch()
+//        LogIn.route
+//    } else {
+//        Dashboard.route
+//    }
+//}
 
 @Composable
 fun MyApp(hiltViewModel: ImageRecordingViewModel) {
     val navController = rememberNavController()
-    val initialRoute = remember { determineInitialRoute() }
+    val context = LocalContext.current
+//    val initialRoute = remember { determineInitialRoute() }
 
-    NavHost(navController = navController, startDestination = initialRoute) {
+    NavHost(navController = navController, startDestination = Dashboard.route) {
         /**
          * The NavController's navigate function modifies the NavController's internal state.
          * To comply with the single source of truth principle as much as possible,
@@ -160,7 +159,13 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
 //                        launchSingleTop = true
                     }
                 },
-                startLogInScreen = { navController.navigate(LogIn.route) }
+                logOut = {
+                    hiltViewModel.logOut()
+                    context.startActivity(Intent(context, LoginActivity::class.java))
+                    (context as MainActivity).finish()
+                    // here we use "as" keyword to cast the context to MainActivity
+                    // because without it, the finish() function will not be available
+                }
             )
         }
 
@@ -173,7 +178,10 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
             Log.i("MainActivity", "Record route")
             RecordScreen(viewModel = hiltViewModel,
                 goBack = {
-                    navController.navigate(Dashboard.route)
+                    navController.navigate(Dashboard.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
                 })
 //                    currentScreen.intValue = Screen.Record.ordinal
         }

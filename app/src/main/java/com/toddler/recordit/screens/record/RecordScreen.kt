@@ -1,24 +1,11 @@
 package com.toddler.recordit.screens.record
 
 import android.content.Context
-import android.content.ContextWrapper
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
-import android.renderscript.Allocation
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,7 +25,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,45 +32,32 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toFile
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.animation.crossfade.CrossfadePlugin
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
-import com.toddler.recordit.Dashboard
 import com.toddler.recordit.R
+import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.ui.theme.OffWhite
-import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.White
-import com.toddler.recordit.utils.getImagesFromAssets
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.util.Locale
 
 @Composable
 fun RecordScreen(viewModel: ImageRecordingViewModel, goBack: () -> Unit) {
@@ -487,7 +460,7 @@ private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier)
         imageModel = { imageDrawable },
         component = rememberImageComponent {
             +CrossfadePlugin(duration = 1000)
-            +BlurTransformationPlugin(radius = 20) // between 0 to Int.MAX_VALUE.
+            +BlurTransformationPlugin(radius = 35) // between 0 to Int.MAX_VALUE.
 //                        // shows a shimmering effect when loading an image.
 //                        +ShimmerPlugin(
 //                            baseColor = Color.DarkGray,
