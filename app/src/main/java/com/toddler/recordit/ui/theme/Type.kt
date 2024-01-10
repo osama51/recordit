@@ -36,6 +36,11 @@ val Abel = FontFamily(
     androidx.compose.ui.text.font.Font(R.font.abel, FontWeight.Bold)
 )
 
+val RobotoMedium = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.roboto_medium, FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(R.font.roboto_medium, FontWeight.Bold)
+)
+
 
 // Set of Material typography styles to start with
 val Typography = Typography(

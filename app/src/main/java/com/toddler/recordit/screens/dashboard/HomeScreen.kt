@@ -1,16 +1,8 @@
 package com.toddler.recordit.screens.dashboard
 
 import android.util.Log
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,10 +28,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,20 +37,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
 import com.toddler.recordit.MainActivity
+import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
-import com.toddler.recordit.screens.record.ImageRecordingViewModel
+import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.Abel
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Orange
@@ -72,7 +61,7 @@ import com.toddler.recordit.ui.theme.Russo
 fun HomeScreen(
     viewModel: ImageRecordingViewModel,
     startRecordScreen: () -> Unit,
-    startLogInScreen: () -> Unit
+    logOut: () -> Unit
 ) {
     // this val should be an argument passed not initiated here
 //    val value: FirebaseAuth
@@ -81,14 +70,16 @@ fun HomeScreen(
     Log.i("HomeScreen", "HomeScreen RECOMPOSED !!")
 //    val itemList = viewModel.itemList.collectAsState().value
     val userName = MainActivity.sharedPreferences.getString("userName", null)
+    val application = viewModel.applicationContext as MyApplication
+    val googleUserName = application.firebaseAuth.currentUser?.displayName
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        val numberOfImages = viewModel.numberOfImages.collectAsState().value
         viewModel.determineNumberOfImagesNotRecorded()
+        val numberOfImages = viewModel.numberOfImages.collectAsState().value
         val numberOfImagesNotRecorded = viewModel.numberOfImagesNotRecorded.collectAsState().value
 
         val pagerState = rememberPagerState(
@@ -107,10 +98,11 @@ fun HomeScreen(
 
 
         ModalNavigationDrawer(
+            modifier = Modifier.width(240.dp),
             drawerContent = {
                 ModalDrawerSheet {
                     Text(
-                        text = "$userName",
+                        text = "$googleUserName",
                         fontSize = 28.sp,
                         style = LocalTextStyle.current.copy(
                             lineHeight = 36.sp,
@@ -119,13 +111,13 @@ fun HomeScreen(
                     )
                     Divider()
                     NavigationDrawerItem(
-                        label = { Text(text = "Edit Username") },
+                        label = { Text(text = "Log out") },
                         selected = false,
-                        onClick = startLogInScreen,
+                        onClick = logOut,
                         icon = {
                             Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_edit),
-                                contentDescription = "Edit Username icon",
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_logout),
+                                contentDescription = "Log out icon",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -139,13 +131,6 @@ fun HomeScreen(
                     .fillMaxSize()
                     .background(Color.White)
                     .padding(it)
-                    .scrollable(
-                        orientation = Orientation.Vertical,
-                        state = rememberScrollableState { delta ->
-                            Log.i("HomeScreen", "delta: $delta")
-                            delta
-                        }
-                    )
             ) {
                 Column(
                     modifier = Modifier
