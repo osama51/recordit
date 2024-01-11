@@ -90,6 +90,7 @@ dependencies {
 //    // Android 13 and below.
 //    implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha01")
 
+    implementation(libs.firebase.storage.ktx)
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

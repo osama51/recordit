@@ -84,6 +84,8 @@ class ImageRecordingViewModel @Inject constructor(
         determineNumberOfImagesNotRecorded()
 
         updateCurrentItem()
+
+        fetchImagesFromFirebaseCloudStorage()
     }
 
     private fun updateCurrentItem() {
@@ -323,6 +325,22 @@ class ImageRecordingViewModel @Inject constructor(
     fun logOut() {
         application.firebaseAuth.signOut()
         sharedPreferences.edit().clear().apply()
+    }
+
+    fun fetchImagesFromFirebaseCloudStorage() {
+        // Create a storage reference from our app
+        val storageRef = application.storage.reference
+
+        // download all files in "images" folder
+        val imagesRef = storageRef.child("images/images.zip")
+        val localFile = File(context.filesDir, "images")
+        imagesRef.getFile(localFile).addOnSuccessListener {
+            // Local temp file has been created
+            Log.i("RecordScreen", "fetchImagesFromFirebaseCloudStorage() | images downloaded successfully")
+        }.addOnFailureListener {
+            // Handle any errors
+            Log.i("RecordScreen", "fetchImagesFromFirebaseCloudStorage() | images download failed")
+        }
     }
 
     companion object {
