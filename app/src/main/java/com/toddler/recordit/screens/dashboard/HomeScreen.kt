@@ -24,6 +24,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -247,6 +248,25 @@ fun HomeScreen(
                         .fillMaxSize(),
 //                    contentAlignment = Alignment.BottomEnd
                 ) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                /** good for later maybe*/
+//                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                viewModel.uploadAudioFiles()
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(vertical = 24.dp),
+                        ){
+                        Text(
+                            text = "Upload My Audio",
+                            fontSize = 24.sp,
+                            fontFamily = Russo,
+                        )
+                    }
+
                     Text(text = "version: ${viewModel.zipVersion.collectAsState().value}",
                         fontSize = 18.sp,
                         fontFamily = Russo,

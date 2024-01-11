@@ -497,7 +497,7 @@ class ImageRecordingViewModel @Inject constructor(
         val audioFiles = uidDirFile.listFiles()
         audioFiles?.forEach { file ->
             val storageRef = application.storage.reference
-            val audioRef = storageRef.child("audio/${file.name}")
+            val audioRef = storageRef.child("${application.firebaseAuth.currentUser?.uid}/${file.name}")
             audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
                 Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
             }.addOnFailureListener {
