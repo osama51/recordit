@@ -163,14 +163,7 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
             HomeScreen(
                 viewModel = hiltViewModel,
                 startRecordScreen = {
-                    activity.startSlideShow = true
-                    activity.requestRecordPermissions(){
-                        if(activity.startSlideShow){
-                            activity.startSlideShow = false
-                            navController.navigate(Record.route) {}
-                        }
-                    }
-
+                    navController.navigate(Record.route) {}
                 },
                 logOut = {
                     hiltViewModel.logOut()

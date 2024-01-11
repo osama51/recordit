@@ -1,6 +1,9 @@
 package com.toddler.recordit.screens.dashboard
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,9 +33,14 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,8 +57,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
+import androidx.core.content.ContextCompat.startActivity
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.toddler.recordit.MainActivity
 import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
@@ -60,6 +71,7 @@ import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Orange
 import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.Russo
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalPermissionsApi::class)
@@ -74,25 +86,30 @@ fun HomeScreen(
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
 
     Log.i("HomeScreen", "HomeScreen RECOMPOSED !!")
-//    val itemList = viewModel.itemList.collectAsState().value
+
     val userName = MainActivity.sharedPreferences.getString("userName", null)
     val application = viewModel.applicationContext as MyApplication
     val googleUserName = application.firebaseAuth.currentUser?.displayName
 
+    val snackbarHostState = remember { SnackbarHostState() }
     val state = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { wasGranted ->
         if (wasGranted) {
-            // TODO do work (ie forward to viewmodel)
-            Toast.makeText(context, "📸 Photo in 3..2..1", Toast.LENGTH_SHORT).show()
+            Log.i("HomeScreen", "wasGranted in launcher")
+            startRecordScreen()
         }
     }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color.White),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
     ) {
         viewModel.determineNumberOfImagesNotRecorded()
         val numberOfImages = viewModel.numberOfImages.collectAsState().value
@@ -155,16 +172,6 @@ fun HomeScreen(
                         .height(250.dp),
                     verticalArrangement = Arrangement.Center,
                 ) {
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxWidth(),
-//                    verticalArrangement = Arrangement.Center,
-//                ) {
-
-//                        Row(modifier = Modifier
-//                            .align(Alignment.CenterHorizontally)
-//                            .padding(4.dp),
-//                            verticalAlignment = Alignment.Bottom,){
                     Text(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
@@ -255,7 +262,33 @@ fun HomeScreen(
                             .align(Alignment.BottomEnd)
                             .padding(24.dp),
                         onClick = {
-                            startRecordScreen()
+                            when(state.status){
+                                is PermissionStatus.Granted -> {
+                                    Log.i("HomeScreen", "Permission granted")
+                                    startRecordScreen()
+                                }
+                                else -> {
+                                    Log.i("HomeScreen", "Permission not granted")
+                                    if (state.status.shouldShowRationale) {
+                                        coroutineScope.launch {
+                                            val result =
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Permission required",
+                                                    actionLabel = "Go to settings"
+                                                )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                val intent = Intent(
+                                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                    Uri.fromParts("package", context.packageName, null)
+                                                )
+                                                startActivity(context, intent, null)
+                                            }
+                                        }
+                                    } else {
+                                        launcher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }
+                            }
                         },
                         containerColor = MaterialTheme.colorScheme.onPrimary,
                         contentColor = MaterialTheme.colorScheme.primary

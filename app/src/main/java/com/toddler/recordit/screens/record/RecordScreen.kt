@@ -3,6 +3,7 @@ package com.toddler.recordit.screens.record
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -297,9 +298,13 @@ fun ScreenContent(
                                     val currentMillis = System.currentTimeMillis()
                                     LaunchedEffect(Unit) {
                                         coroutineScope.launch {
-                                            isRecordingLocal = true
-                                            viewModel.startRecording(viewModel.returnFile())
+                                            if(viewModel.isPermissionGranted()){
+                                                isRecordingLocal = true
+                                                viewModel.startRecording(viewModel.returnFile())
 //                                            Log.i("RecordScreen", "I'm pressed and am recording")
+                                            } else {
+                                                Toast.makeText(context, "Please grant permission to record audio", Toast.LENGTH_SHORT).show()
+                                            }
                                         }
                                     }
 
