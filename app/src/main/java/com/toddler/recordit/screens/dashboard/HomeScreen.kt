@@ -107,12 +107,13 @@ fun HomeScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val state = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { wasGranted ->
-        if (wasGranted) {
-            Log.i("HomeScreen", "wasGranted in launcher")
-            startRecordScreen()
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { wasGranted ->
+            if (wasGranted) {
+                Log.i("HomeScreen", "wasGranted in launcher")
+                startRecordScreen()
+            }
         }
-    }
 
     Scaffold(
         modifier = Modifier
@@ -148,31 +149,60 @@ fun HomeScreen(
                     Divider()
                     var uploadingFlag by remember { mutableStateOf(false) }
                     NavigationDrawerItem(
-                        label = { Text(text = "Log out") },
+                        label = { Text(text = "Upload my records") },
                         selected = false,
                         onClick = {
                             coroutineScope.launch {
                                 /** good for later maybe*/
 //                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                uploadingFlag = true
-                                viewModel.uploadAudioFiles(object : UploadCompletionListener {
-                                    override fun onUploadComplete() {
-                                        // All files uploaded successfully
-                                        uploadingFlag = false
-                                        Toast.makeText(context, "Uploaded ${viewModel.numberOfImagesRecorded} records successfully", Toast.LENGTH_SHORT).show()
-                                    }
+                                if (viewModel.numberOfImagesRecorded.value == 0) {
+                                    Toast.makeText(
+                                        context,
+                                        "No records to upload",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@launch
+                                } else {
+                                    uploadingFlag = true
+                                    viewModel.uploadAudioFiles(object : UploadCompletionListener {
+                                        override fun onUploadComplete() {
+                                            // All files uploaded successfully
+                                            uploadingFlag = false
+                                            Toast.makeText(
+                                                context,
+                                                "Uploaded ${viewModel.numberOfImagesRecorded.value} records successfully",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
 
-                                    override fun onUploadFailed(file: File, exception: Exception) {
-                                        // Handle individual upload failure
-                                        Toast.makeText(context, "Upload failed for ${file.name}", Toast.LENGTH_SHORT).show()
-                                    }
-                                })
+                                        override fun onUploadFailed(
+                                            file: File,
+                                            exception: Exception
+                                        ) {
+                                            uploadingFlag = false
+                                            // Handle individual upload failure
+                                            Toast.makeText(
+                                                context,
+                                                "Upload failed for ${file.name}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    })
+                                }
+
                             }
                         },
                         icon = {
-                            Box(Modifier.fillMaxSize()) {
-                                if (uploadingFlag)
-                                CircularProgressIndicator(Modifier.align(Alignment.Center))
+                            Box(Modifier.size(24.dp)) {
+                                if (uploadingFlag) {
+                                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                                } else {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_upload),
+                                        contentDescription = "Upload icon",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     )
@@ -289,13 +319,15 @@ fun HomeScreen(
 //                    contentAlignment = Alignment.BottomEnd
                 ) {
 
-                    Text(text = "version: ${viewModel.zipVersion.collectAsState().value}",
+                    Text(
+                        text = "version: ${viewModel.zipVersion.collectAsState().value}",
                         fontSize = 18.sp,
                         fontFamily = Russo,
                         color = Gray,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(horizontal = 8.dp, vertical = 24.dp),)
+                            .padding(horizontal = 8.dp, vertical = 24.dp),
+                    )
                     ExtendedFloatingActionButton(
                         text = {
                             Text(
@@ -314,11 +346,12 @@ fun HomeScreen(
                             .align(Alignment.BottomEnd)
                             .padding(24.dp),
                         onClick = {
-                            when(state.status){
+                            when (state.status) {
                                 is PermissionStatus.Granted -> {
                                     Log.i("HomeScreen", "Permission granted")
                                     startRecordScreen()
                                 }
+
                                 else -> {
                                     Log.i("HomeScreen", "Permission not granted")
                                     if (state.status.shouldShowRationale) {
@@ -331,7 +364,11 @@ fun HomeScreen(
                                             if (result == SnackbarResult.ActionPerformed) {
                                                 val intent = Intent(
                                                     Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                    Uri.fromParts("package", context.packageName, null)
+                                                    Uri.fromParts(
+                                                        "package",
+                                                        context.packageName,
+                                                        null
+                                                    )
                                                 )
                                                 startActivity(context, intent, null)
                                             }
