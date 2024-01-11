@@ -15,6 +15,7 @@ import com.toddler.recordit.R
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.record.RecordItem
+import com.toddler.recordit.upload.UploadCompletionListener
 import com.toddler.recordit.utils.UnzipListener
 import com.toddler.recordit.utils.UnzipUtils
 import com.toddler.recordit.utils.UnzipUtilsWithListeners
@@ -491,14 +492,19 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     // loop over the audio files in the uidDir and upload them to firebase storage
-    fun uploadAudioFiles() {
+    fun uploadAudioFiles(completionListener: UploadCompletionListener? = null) {
         val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
         val uidDirFile = File(uidDir)
         val audioFiles = uidDirFile.listFiles()
+        var successfulUploads = 0
         audioFiles?.forEach { file ->
             val storageRef = application.storage.reference
             val audioRef = storageRef.child("${application.firebaseAuth.currentUser?.uid}/${file.name}")
             audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
+                successfulUploads++
+                if (successfulUploads == _numberOfImagesRecorded.value) {
+                    completionListener?.onUploadComplete()
+                }
                 Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
             }.addOnFailureListener {
                 Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} upload failed | error: $it")

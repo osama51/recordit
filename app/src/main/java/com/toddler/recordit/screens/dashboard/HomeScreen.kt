@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -39,9 +40,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,7 +80,9 @@ import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Orange
 import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.Russo
+import com.toddler.recordit.upload.UploadCompletionListener
 import kotlinx.coroutines.launch
+import java.io.File
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalPermissionsApi::class)
@@ -139,6 +146,38 @@ fun HomeScreen(
                         modifier = Modifier.padding(horizontal = 32.dp, vertical = 90.dp),
                     )
                     Divider()
+                    var uploadingFlag by remember { mutableStateOf(false) }
+                    NavigationDrawerItem(
+                        label = { Text(text = "Log out") },
+                        selected = false,
+                        onClick = {
+                            coroutineScope.launch {
+                                /** good for later maybe*/
+//                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                uploadingFlag = true
+                                viewModel.uploadAudioFiles(object : UploadCompletionListener {
+                                    override fun onUploadComplete() {
+                                        // All files uploaded successfully
+                                        uploadingFlag = false
+                                        Toast.makeText(context, "Uploaded ${viewModel.numberOfImagesRecorded} records successfully", Toast.LENGTH_SHORT).show()
+                                    }
+
+                                    override fun onUploadFailed(file: File, exception: Exception) {
+                                        // Handle individual upload failure
+                                        Toast.makeText(context, "Upload failed for ${file.name}", Toast.LENGTH_SHORT).show()
+                                    }
+                                })
+                            }
+                        },
+                        icon = {
+                            Box(Modifier.fillMaxSize()) {
+                                if (uploadingFlag)
+                                CircularProgressIndicator(Modifier.align(Alignment.Center))
+                            }
+                        }
+                    )
+                    Divider()
+
                     NavigationDrawerItem(
                         label = { Text(text = "Log out") },
                         selected = false,
@@ -168,7 +207,8 @@ fun HomeScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.secondary,
+                                    MaterialTheme.colorScheme.primary
                                 )
                             )
                         )
@@ -248,24 +288,6 @@ fun HomeScreen(
                         .fillMaxSize(),
 //                    contentAlignment = Alignment.BottomEnd
                 ) {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                /** good for later maybe*/
-//                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                viewModel.uploadAudioFiles()
-                            }
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(vertical = 24.dp),
-                        ){
-                        Text(
-                            text = "Upload My Audio",
-                            fontSize = 24.sp,
-                            fontFamily = Russo,
-                        )
-                    }
 
                     Text(text = "version: ${viewModel.zipVersion.collectAsState().value}",
                         fontSize = 18.sp,
