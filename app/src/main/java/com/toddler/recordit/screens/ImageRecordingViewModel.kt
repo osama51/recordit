@@ -248,9 +248,10 @@ class ImageRecordingViewModel @Inject constructor(
 //        Log.i("AssessViewModel", "Uri: $uri")
 
         // instead, access the directory that the system provides for my app
-        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+//        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
-        return Uri.parse("${context.filesDir}/${imageTitle.replace(" ", "_")}.mp3")
+        return Uri.parse("${uidDir}/${imageTitle.replace(" ", "_")}.mp3")
 //        }
     }
 
@@ -260,8 +261,9 @@ class ImageRecordingViewModel @Inject constructor(
     fun saveItemListToJson() {
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
-        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val file = File(context.filesDir, JSON_FILE_NAME)
+//        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+        val file = File(uidDir, JSON_FILE_NAME)
         file.writeText(json)
         Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
     }
@@ -269,8 +271,9 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun loadItemListFromJson() {
         val gson = Gson()
-        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val file = File(context.filesDir, JSON_FILE_NAME)
+//        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+        val file = File(uidDir, JSON_FILE_NAME)
         val json = file.readText()
         val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
         Log.i("RecordScreen", "itemList loaded from json | ${file.absolutePath}")
@@ -279,7 +282,14 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     private fun checkIfFileExists(fileName: String): Boolean {
-        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+//        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
+        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+        val file = File(uidDir, fileName)
+        return file.exists()
+    }
+
+    // this will be used for the images.zip file only, since it is shared between all users
+    private fun checkIfFileExistsInFilesDir(fileName: String): Boolean {
         val file = File(context.filesDir, fileName)
         return file.exists()
     }
@@ -311,6 +321,7 @@ class ImageRecordingViewModel @Inject constructor(
                 recorded = false
             )
         }
+        saveItemListToJson()
     }
 
     /**
@@ -374,7 +385,7 @@ class ImageRecordingViewModel @Inject constructor(
 
             version = extractVersionFromTextFile(localVerFile)
             sharedPreferences.getInt("imagesVersion", -1).let {
-                if (version > it || !checkIfFileExists("images.zip")) {
+                if (version > it || !checkIfFileExistsInFilesDir("images.zip")) {
                     sharedPreferences.edit().putInt("imagesVersion", version).apply()
                     fetchImagesFromFirebaseCloudStorage()
                     _zipVersion.value = version
@@ -479,9 +490,26 @@ class ImageRecordingViewModel @Inject constructor(
         updateCurrentItem()
     }
 
+    // loop over the audio files in the uidDir and upload them to firebase storage
+    fun uploadAudioFiles() {
+        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+        val uidDirFile = File(uidDir)
+        val audioFiles = uidDirFile.listFiles()
+        audioFiles?.forEach { file ->
+            val storageRef = application.storage.reference
+            val audioRef = storageRef.child("audio/${file.name}")
+            audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
+                Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
+            }.addOnFailureListener {
+                Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} upload failed | error: $it")
+            }
+        }
+    }
+
+
     fun logOut() {
         application.firebaseAuth.signOut()
-        sharedPreferences.edit().clear().apply()
+//        sharedPreferences.edit().clear().apply()
     }
 
 

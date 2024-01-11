@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
         val packageName = applicationContext.packageName
         sharedPreferences = getSharedPreferences(packageName, MODE_PRIVATE)
         setContent {
-            RecordItTheme {
+            RecordItTheme(dynamicColor = true) {
                 // A surface container using the 'background' color from the theme
                 MyApp(hiltViewModel<ImageRecordingViewModel>())
             }

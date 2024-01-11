@@ -167,7 +167,7 @@ fun HomeScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Orange, Red
+                                    MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary
                                 )
                             )
                         )

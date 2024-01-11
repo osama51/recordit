@@ -56,14 +56,14 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
 
-    RecordItTheme(darkTheme = false, dynamicColor = false) {
+    RecordItTheme(darkTheme = false, dynamicColor = true) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Orange, Red
+                            MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary
                         )
                     )
                 ),
@@ -99,7 +99,7 @@ fun LoginScreen(
                         )
                     ),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 //                Button(
 //                    colors = ButtonDefaults.buttonColors(
 //                        containerColor = MaterialTheme.colorScheme.onPrimary,
@@ -112,7 +112,7 @@ fun LoginScreen(
 //                ) {
 //                    Text(text = "Sign in")
 //                }
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
                     modifier = Modifier.height(40.dp),
