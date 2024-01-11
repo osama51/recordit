@@ -24,7 +24,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -40,7 +39,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,12 +72,9 @@ import com.toddler.recordit.R
 import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.Abel
 import com.toddler.recordit.ui.theme.Gray
-import com.toddler.recordit.ui.theme.MyBlack
-import com.toddler.recordit.ui.theme.MyDarkGray
 import com.toddler.recordit.ui.theme.OffWhite
-import com.toddler.recordit.ui.theme.Orange
-import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.Russo
+import com.toddler.recordit.ui.theme.fontFamily
 import com.toddler.recordit.upload.UploadCompletionListener
 import kotlinx.coroutines.launch
 import java.io.File
@@ -144,82 +139,109 @@ fun HomeScreen(
                         style = LocalTextStyle.current.copy(
                             lineHeight = 36.sp,
                         ),
-                        modifier = Modifier.padding(horizontal = 32.dp, vertical = 90.dp),
+                        modifier = Modifier
+                            .weight(3f)
+                            .padding(horizontal = 32.dp, vertical = 90.dp),
                     )
                     Divider()
                     var uploadingFlag by remember { mutableStateOf(false) }
-                    NavigationDrawerItem(
-                        label = { Text(text = "Upload my records") },
-                        selected = false,
-                        onClick = {
-                            coroutineScope.launch {
-                                /** good for later maybe*/
+                    Column(
+                        modifier = Modifier
+                            .weight(5f)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        NavigationDrawerItem(
+                            label = {
+                                Text(
+                                    text = "Upload my records",
+                                    fontFamily = Abel, fontSize = 24.sp
+                                )
+                            },
+                            selected = false,
+                            onClick = {
+                                coroutineScope.launch {
+                                    /** good for later maybe*/
 //                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                if (viewModel.numberOfImagesRecorded.value == 0) {
-                                    Toast.makeText(
-                                        context,
-                                        "No records to upload",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    return@launch
-                                } else {
-                                    uploadingFlag = true
-                                    viewModel.uploadAudioFiles(object : UploadCompletionListener {
-                                        override fun onUploadComplete() {
-                                            // All files uploaded successfully
-                                            uploadingFlag = false
-                                            Toast.makeText(
-                                                context,
-                                                "Uploaded ${viewModel.numberOfImagesRecorded.value} records successfully",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
+                                    if (viewModel.numberOfImagesRecorded.value == 0) {
+                                        Toast.makeText(
+                                            context,
+                                            "No records to upload",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@launch
+                                    } else {
+                                        uploadingFlag = true
+                                        viewModel.uploadAudioFiles(object :
+                                            UploadCompletionListener {
+                                            override fun onUploadComplete() {
+                                                // All files uploaded successfully
+                                                uploadingFlag = false
+                                                Toast.makeText(
+                                                    context,
+                                                    "Uploaded ${viewModel.numberOfImagesRecorded.value} records successfully",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
 
-                                        override fun onUploadFailed(
-                                            file: File,
-                                            exception: Exception
-                                        ) {
-                                            uploadingFlag = false
-                                            // Handle individual upload failure
-                                            Toast.makeText(
-                                                context,
-                                                "Upload failed for ${file.name}",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    })
+                                            override fun onUploadFailed(
+                                                file: File,
+                                                exception: Exception
+                                            ) {
+                                                uploadingFlag = false
+                                                // Handle individual upload failure
+                                                Toast.makeText(
+                                                    context,
+                                                    "Upload failed for ${file.name}",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        })
+                                    }
+
                                 }
-
-                            }
-                        },
-                        icon = {
-                            Box(Modifier.size(24.dp)) {
-                                if (uploadingFlag) {
-                                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                                } else {
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_upload),
-                                        contentDescription = "Upload icon",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
+                            },
+                            icon = {
+                                Box(Modifier.size(30.dp)) {
+                                    if (uploadingFlag) {
+                                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+                                    } else {
+                                        Icon(
+                                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_upload),
+                                            contentDescription = "Upload icon",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
-                        }
-                    )
-                    Divider()
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        Divider()
+                        NavigationDrawerItem(
+                            modifier = Modifier
+                                .padding(bottom = 32.dp),
+                            label = { Text(text = "Log out",
+                                fontFamily = Abel,
+                                fontSize = 24.sp) },
+                            selected = false,
+                            onClick = logOut,
+                            icon = {
+                                Icon(
+                                    modifier = Modifier.size(24.dp),
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_logout),
+                                    contentDescription = "Log out icon",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        )
+                    }
 
-                    NavigationDrawerItem(
-                        label = { Text(text = "Log out") },
-                        selected = false,
-                        onClick = logOut,
-                        icon = {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_logout),
-                                contentDescription = "Log out icon",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    )
                     // ...other drawer items
                 }
             }
