@@ -1,6 +1,10 @@
 package com.toddler.recordit.screens.dashboard
 
+import android.Manifest
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,12 +42,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 import com.toddler.recordit.MainActivity
 import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
@@ -55,23 +62,32 @@ import com.toddler.recordit.ui.theme.Red
 import com.toddler.recordit.ui.theme.Russo
 
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     viewModel: ImageRecordingViewModel,
     startRecordScreen: () -> Unit,
     logOut: () -> Unit,
-    requestPermissions: () -> Unit
 ) {
     // this val should be an argument passed not initiated here
 //    val value: FirebaseAuth
 
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     Log.i("HomeScreen", "HomeScreen RECOMPOSED !!")
 //    val itemList = viewModel.itemList.collectAsState().value
     val userName = MainActivity.sharedPreferences.getString("userName", null)
     val application = viewModel.applicationContext as MyApplication
     val googleUserName = application.firebaseAuth.currentUser?.displayName
+
+    val state = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { wasGranted ->
+        if (wasGranted) {
+            // TODO do work (ie forward to viewmodel)
+            Toast.makeText(context, "📸 Photo in 3..2..1", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -89,13 +105,6 @@ fun HomeScreen(
             // provide pageCount
             numberOfImages
         }
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(Color.White)
-//                .padding(it),
-//        ) {
-
 
         ModalNavigationDrawer(
             drawerContent = {
@@ -246,9 +255,8 @@ fun HomeScreen(
                             .align(Alignment.BottomEnd)
                             .padding(24.dp),
                         onClick = {
-                            requestPermissions()
                             startRecordScreen()
-                                  },
+                        },
                         containerColor = MaterialTheme.colorScheme.onPrimary,
                         contentColor = MaterialTheme.colorScheme.primary
                     )
