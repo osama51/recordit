@@ -81,12 +81,14 @@ dependencies {
 
     implementation("com.google.code.gson:gson:2.8.8")
 
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+    implementation ("com.google.accompanist:accompanist-permissions:0.33.2-alpha")
 
-    implementation("androidx.credentials:credentials:1.3.0-alpha01")
-    // optional - needed for credentials support from play services, for devices running
-    // Android 13 and below.
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha01")
+
+//    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+//    implementation("androidx.credentials:credentials:1.3.0-alpha01")
+//    // optional - needed for credentials support from play services, for devices running
+//    // Android 13 and below.
+//    implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha01")
 
     implementation(libs.firebase.auth)
     implementation(libs.androidx.core.ktx)

@@ -218,7 +218,6 @@ class ImageRecordingViewModel @Inject constructor(
             audioPlayer.playFile(_audioFile.value ?: return)
             _buttonIcon.value = R.drawable.ic_stop
             audioPlayer.triggerWhenFinished {
-                Log.i("RecordScreen", "Finished Playing")
                 _buttonIcon.value = R.drawable.ic_play
                 updateIsPlaying()
             }

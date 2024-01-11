@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
@@ -17,28 +18,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.toddler.recordit.playback.AndroidAudioPlayer
-import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.FirstLaunchScreen
 import com.toddler.recordit.screens.dashboard.HomeScreen
 import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
 import dagger.hilt.android.AndroidEntryPoint
-import java.io.File
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val recorder by lazy {
-        AndroidAudioRecorder(applicationContext)
-    }
-    private val player by lazy {
-        AndroidAudioPlayer(applicationContext)
-    }
-    private var audioFile: File? = null
-
+    var startSlideShow: Boolean = false
+    var shouldShowRationale: Boolean = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val packageName = applicationContext.packageName
@@ -49,11 +41,11 @@ class MainActivity : ComponentActivity() {
                 MyApp(hiltViewModel<ImageRecordingViewModel>())
             }
         }
-        requestRecordAndStoragePermissions()
+        requestRecordPermissions() {}
     }
 
     companion object {
-        private const val MY_PERMISSION_REQUEST_RECORD_AUDIO_AND_STORAGE = 1
+        private const val MY_PERMISSION_REQUEST_RECORD_AUDIO = 1
 
         //        @Inject
         lateinit var sharedPreferences: SharedPreferences
@@ -72,60 +64,57 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun checkAndRequestPermissions(){
-        if(!checkRecordAndStoragePermissions()){
-            requestRecordAndStoragePermissions()
-        }
-    }
 
-    private fun requestRecordAndStoragePermissions() {
+    fun requestRecordPermissions(proceed: () -> Unit) {
         val recordPermissionCheck = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.RECORD_AUDIO
         )
-        val storagePermissionCheck = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
         if (recordPermissionCheck == PERMISSION_GRANTED
-            && storagePermissionCheck == PERMISSION_GRANTED
         ) {
             // you have the permission, proceed to record audio
+            proceed()
         } else {
             // you don't have permission, try requesting for it
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf<String>(
                     Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
                 ),
-                MY_PERMISSION_REQUEST_RECORD_AUDIO_AND_STORAGE
+                MY_PERMISSION_REQUEST_RECORD_AUDIO
             )
+            //check if user denied the permission
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                )
+            ) {
+                // user denied the permission, show rationale
+                Log.i("MainActivity", "requestRecordPermission: user denied the permission")
+                // show snackbar to request permission
+                shouldShowRationale = true
+            } else {
+                // user denied the permission and checked "never ask again"
+                Log.i("MainActivity", "requestRecordPermission: user denied the permission and checked \"never ask again\"")
+            }
+            Toast.makeText(
+                this,
+                "You need to allow RecordIt to record audio to use this app",
+                Toast.LENGTH_LONG
+            ).show()
         }
-    }
-
-    fun checkRecordAndStoragePermissions(): Boolean {
-        val recordPermissionCheck = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.RECORD_AUDIO
-        )
-        val storagePermissionCheck = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
-        return recordPermissionCheck == PERMISSION_GRANTED
-                && storagePermissionCheck == PERMISSION_GRANTED
     }
 
 
     // Handle permission request result
+    @Deprecated("Not deprecated itself?")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == MY_PERMISSION_REQUEST_RECORD_AUDIO_AND_STORAGE) {
+        if (requestCode == MY_PERMISSION_REQUEST_RECORD_AUDIO) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission granted
                 // Perform your desired operations here
@@ -151,6 +140,7 @@ class MainActivity : ComponentActivity() {
 fun MyApp(hiltViewModel: ImageRecordingViewModel) {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val activity = context as MainActivity
 //    val initialRoute = remember { determineInitialRoute() }
 
     NavHost(navController = navController, startDestination = Dashboard.route) {
@@ -173,18 +163,19 @@ fun MyApp(hiltViewModel: ImageRecordingViewModel) {
             HomeScreen(
                 viewModel = hiltViewModel,
                 startRecordScreen = {
-                    navController.navigate(Record.route) {
-//                        popUpTo(navController.graph.startDestinationId)
-//                        launchSingleTop = true
+                    activity.startSlideShow = true
+                    activity.requestRecordPermissions(){
+                        if(activity.startSlideShow){
+                            activity.startSlideShow = false
+                            navController.navigate(Record.route) {}
+                        }
                     }
-                },
-                requestPermissions = {
-                    (context as MainActivity).checkAndRequestPermissions()
+
                 },
                 logOut = {
                     hiltViewModel.logOut()
                     context.startActivity(Intent(context, LoginActivity::class.java))
-                    (context as MainActivity).finish()
+                    activity.finish()
                     // here we use "as" keyword to cast the context to MainActivity
                     // because without it, the finish() function will not be available
                 }
