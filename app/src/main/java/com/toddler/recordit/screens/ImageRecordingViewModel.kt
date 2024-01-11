@@ -1,9 +1,12 @@
 package com.toddler.recordit.screens
 
+import android.Manifest
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.ViewModel
 import com.google.gson.Gson
 import com.toddler.recordit.MyApplication
@@ -182,6 +185,14 @@ class ImageRecordingViewModel @Inject constructor(
     fun determineNumberOfImagesNotRecorded() {
         _numberOfImagesNotRecorded.value = _itemList.value.filter { !it.recorded }.size
         Log.i("RecordScreen", "determineNumberOfImagesNotRecorded() called | ${_numberOfImagesNotRecorded.value}")
+    }
+
+    fun isPermissionGranted(): Boolean {
+        val recordPermissionCheck = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        )
+        return recordPermissionCheck == PERMISSION_GRANTED
     }
 
     fun startRecording(outputFile: File) {
