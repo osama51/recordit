@@ -43,7 +43,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     var newZip = false
 
-    private val _zipVersion = MutableStateFlow(0)
+    private val _zipVersion = MutableStateFlow(sharedPreferences.getInt("imagesVersion", -1))
     val zipVersion: StateFlow<Int> = _zipVersion
 
 
@@ -338,6 +338,7 @@ class ImageRecordingViewModel @Inject constructor(
 
         }
         _itemList.value = newImages
+        saveItemListToJson()
     }
 
     /**
@@ -358,15 +359,6 @@ class ImageRecordingViewModel @Inject constructor(
         Log.i("RecordScreen", "itemList updated !!")
         determineNumberOfImagesRecorded()
         determineNumberOfImagesNotRecorded()
-    }
-
-    // function to take a string, replace underscores with spaces, and capitalize each word
-    private fun String.capitalizeWords(): String = split("_").joinToString(" ") {
-        it.replaceFirstChar { firstChar ->
-            if (firstChar.isLowerCase()) firstChar.titlecase(
-                Locale.ROOT
-            ) else firstChar.toString()
-        }
     }
 
     private fun getImagesBasedOnVersion(): Int{
@@ -392,6 +384,7 @@ class ImageRecordingViewModel @Inject constructor(
             }
 
         }.addOnFailureListener {
+            prepareToDisplay()
             Log.i(
                 "RecordScreen",
                 "fetchImagesFromFirebaseCloudStorage() | version download failed | error: $it"
@@ -403,7 +396,11 @@ class ImageRecordingViewModel @Inject constructor(
     private fun extractVersionFromTextFile(file: File): Int{
         var version = 0
         try {
-            version = file.readText().toInt()
+            val fileText = file.readText()
+            // remove all non-digit characters
+            val regex = Regex("[^0-9]")
+            val versionString = regex.replace(fileText, "")
+            version = versionString.toInt()
             Log.i("RecordScreen", "extractTextFromTextFile() | text: $version")
         } catch (e: Exception) {
             Log.i("RecordScreen", "extractTextFromTextFile() | error: $e")
@@ -486,6 +483,17 @@ class ImageRecordingViewModel @Inject constructor(
         application.firebaseAuth.signOut()
         sharedPreferences.edit().clear().apply()
     }
+
+
+    // function to take a string, replace underscores with spaces, and capitalize each word
+    private fun String.capitalizeWords(): String = split("_").joinToString(" ") {
+        it.replaceFirstChar { firstChar ->
+            if (firstChar.isLowerCase()) firstChar.titlecase(
+                Locale.ROOT
+            ) else firstChar.toString()
+        }
+    }
+
 
     companion object {
         const val JSON_FILE_NAME = "itemList.json"
