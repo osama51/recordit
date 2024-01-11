@@ -133,16 +133,20 @@ fun HomeScreen(
         ModalNavigationDrawer(
             drawerContent = {
                 ModalDrawerSheet {
-                    Text(
-                        text = "$googleUserName",
-                        fontSize = 28.sp,
-                        style = LocalTextStyle.current.copy(
-                            lineHeight = 36.sp,
-                        ),
-                        modifier = Modifier
-                            .weight(3f)
-                            .padding(horizontal = 32.dp, vertical = 90.dp),
-                    )
+                    Column(modifier = Modifier
+                        .weight(3f)
+                        .padding(start = 32.dp)
+                        .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,){
+                        Text(
+                            text = "$googleUserName",
+                            fontSize = 28.sp,
+                            style = LocalTextStyle.current.copy(
+                                lineHeight = 36.sp,
+                            ),
+                        )
+                    }
+
                     Divider()
                     var uploadingFlag by remember { mutableStateOf(false) }
                     Column(
