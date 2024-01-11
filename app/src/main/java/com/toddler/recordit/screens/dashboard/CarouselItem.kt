@@ -58,7 +58,9 @@ fun CarouselItem(context: Context, item: RecordItem) {
 //        val imgUri = Uri.parse(item.image)
 
         val drawable by lazy {
-            Drawable.createFromStream(context.assets.open(item.imagePath), null) // this is the default that I should use, but will use the below for now
+//            Drawable.createFromStream(context.assets.open(item.imagePath), null) // this is the default that I should use, but will use the below for now
+
+            Drawable.createFromPath(item.imagePath)
 
 //            BitmapFactory.decodeStream(context.assets.open(item.imagePath))
 

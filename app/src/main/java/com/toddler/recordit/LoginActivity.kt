@@ -111,9 +111,9 @@ class LoginActivity : ComponentActivity() {
                         val idToken = account.idToken
                         val accountId = account.id
                         val uid = firebaseAuth.currentUser?.uid // safer than account.id and more simple than account.idToken
-                        Log.i(TAG, "handleTask: idToken = $idToken")
-                        Log.i(TAG, "handleTask: accountId = $accountId")
-                        Log.i(TAG, "handleTask: uid = $uid")
+//                        Log.i(TAG, "handleTask: idToken = $idToken")
+//                        Log.i(TAG, "handleTask: accountId = $accountId")
+//                        Log.i(TAG, "handleTask: uid = $uid")
                         sharedPreferences.edit().putString("uid", uid).apply()
                         Toast.makeText(this, "Welcome ${account.displayName}", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this, MainActivity::class.java))

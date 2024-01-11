@@ -4,7 +4,6 @@ import android.app.Application
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
-import com.toddler.recordit.authentication.FirebaseAuthentication
 import dagger.hilt.android.HiltAndroidApp
 
 

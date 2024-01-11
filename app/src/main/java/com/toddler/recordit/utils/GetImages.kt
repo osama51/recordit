@@ -1,12 +1,10 @@
 package com.toddler.recordit.utils
 
 import android.content.Context
-import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.core.content.res.ResourcesCompat
 import com.toddler.recordit.R
 import java.io.IOException
-import java.io.InputStream
 
 // fun to return list of myimages from assets/myimages path using Glide
 fun getImagesFromAssets(context: Context): MutableList<Map<String, String>> {
@@ -44,9 +42,30 @@ fun getImagesFromAssets(context: Context): MutableList<Map<String, String>> {
     return mapImages
 }
 
+// get images from filesDir
+fun getImagesFromFilesDir(context: Context): MutableList<Map<String, String>> {
+
+    // get files in images folder inside filesDir
+     val files = context.getDir("images", Context.MODE_PRIVATE).listFiles()
+    Log.i("getImagesFromFilesDir", "getDir: ${context.getDir("images", Context.MODE_PRIVATE)}")
+    Log.i("getImagesFromFilesDir", "files: $files")
+    val mapImages = mutableListOf<Map<String, String>>()
+    context.getDir("images", Context.MODE_PRIVATE).listFiles()?.forEach {
+        if (validFile(it.name)) {
+            mapImages.add(mapOf(it.name to it.absolutePath))
+        } else {
+            Log.d("getImagesFromFilesDir", "File ${it.name} is not an image")
+        }
+    }
+    return mapImages
+}
+
+
+
+
 fun validFile(fileName: String): Boolean {
 // check if fileName ends with .jpg or .png
-    val regex = Regex(pattern = "(.jpg|.png)$")
+    val regex = Regex(pattern = "(.jpeg|.jpg|.png)$")
     val result = regex.find(input = fileName)
 //    if (result == null) {
 //        throw IOException("File $fileName is not an image")

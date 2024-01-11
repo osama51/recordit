@@ -88,13 +88,16 @@ fun ScreenContent(
 
     val item = viewModel.currentItem.collectAsState().value!!
     val drawable by lazy {
-        Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
+//        Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
+
+        Drawable.createFromPath(item.imagePath)
 
 //        val bitmap = BitmapFactory.decodeStream(context.assets.open(item.imagePath))
 //        val outputStream = ByteArrayOutputStream()
 //        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
 //        outputStream.toByteArray()
     }
+
 
     Box(
         modifier = Modifier

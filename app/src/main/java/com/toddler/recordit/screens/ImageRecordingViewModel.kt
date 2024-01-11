@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.ViewModel
@@ -14,7 +15,11 @@ import com.toddler.recordit.R
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.record.RecordItem
+import com.toddler.recordit.utils.UnzipListener
+import com.toddler.recordit.utils.UnzipUtils
+import com.toddler.recordit.utils.UnzipUtilsWithListeners
 import com.toddler.recordit.utils.getImagesFromAssets
+import com.toddler.recordit.utils.getImagesFromFilesDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +40,11 @@ class ImageRecordingViewModel @Inject constructor(
     val application = applicationContext as MyApplication
 
     val sharedPreferences = application.getSharedPreferences(application.packageName, MODE_PRIVATE)
+
+    var newZip = false
+
+    private val _zipVersion = MutableStateFlow(0)
+    val zipVersion: StateFlow<Int> = _zipVersion
 
 
     private val _itemList = MutableStateFlow(listOf<RecordItem>())
@@ -77,15 +87,7 @@ class ImageRecordingViewModel @Inject constructor(
     // State flows and other properties remain the same
 
     init {
-        initializeItemList()
-
-        _numberOfImages.value = itemList.value.size
-        determineNumberOfImagesRecorded()
-        determineNumberOfImagesNotRecorded()
-
-        updateCurrentItem()
-
-        fetchImagesFromFirebaseCloudStorage()
+        getImagesBasedOnVersion()
     }
 
     private fun updateCurrentItem() {
@@ -103,8 +105,8 @@ class ImageRecordingViewModel @Inject constructor(
         Log.i("RecordScreen", "updateCurrentItem() called | ${_currentItem.value}")
     }
 
-    fun navigateToNextItem(){
-        if(isPlaying()){
+    fun navigateToNextItem() {
+        if (isPlaying()) {
             stopPlayback()
         }
         /**
@@ -116,8 +118,8 @@ class ImageRecordingViewModel @Inject constructor(
         _audioFile.value = returnFile()                                   // أخوك
     }
 
-    fun navigateToPreviousItem(){
-        if(isPlaying()){
+    fun navigateToPreviousItem() {
+        if (isPlaying()) {
             stopPlayback()
         }
         /**
@@ -141,52 +143,21 @@ class ImageRecordingViewModel @Inject constructor(
         return _currentItemIndex.value != 0
     }
 
-    private fun initializeItemList() {
-        if (checkIfFileExists(JSON_FILE_NAME)) {
-            loadItemListFromJson()
-        } else {
-            createItemList()
-        }
-    }
-
-    private fun createItemList() {
-        _itemList.value = getImagesFromAssets(context = context).mapIndexed { index, imageMap ->
-            var imageName = imageMap.entries.first().key
-            imageName = imageName.dropLast(4).capitalizeWords()
-            Log.i("RecordScreen", "itemList re-occupied !!")
-            RecordItem(
-                id = index,
-                title = imageName, //imageMap.toString().substring(7),
-                description = "Description ${imageName}",
-                imagePath = imageMap.entries.first().value,
-                recorded = false
-            )
-        }
-    }
-
-    fun updateItemList(item: RecordItem) {
-        val updatedItemList = _itemList.value.map {
-            if (it.id == item.id) {
-                it.copy(recorded = item.recorded)
-            } else {
-                it
-            }
-        }
-        _itemList.value = updatedItemList
-        Log.i("RecordScreen", "itemList updated !!")
-        determineNumberOfImagesRecorded()
-        determineNumberOfImagesNotRecorded()
-    }
-
 
     fun determineNumberOfImagesRecorded() {
         _numberOfImagesRecorded.value = _itemList.value.filter { it.recorded }.size
-        Log.i("RecordScreen", "determineNumberOfImagesRecorded() called | ${_numberOfImagesRecorded.value}")
+        Log.i(
+            "RecordScreen",
+            "determineNumberOfImagesRecorded() called | ${_numberOfImagesRecorded.value}"
+        )
     }
 
     fun determineNumberOfImagesNotRecorded() {
         _numberOfImagesNotRecorded.value = _itemList.value.filter { !it.recorded }.size
-        Log.i("RecordScreen", "determineNumberOfImagesNotRecorded() called | ${_numberOfImagesNotRecorded.value}")
+        Log.i(
+            "RecordScreen",
+            "determineNumberOfImagesNotRecorded() called | ${_numberOfImagesNotRecorded.value}"
+        )
     }
 
     fun isPermissionGranted(): Boolean {
@@ -244,7 +215,7 @@ class ImageRecordingViewModel @Inject constructor(
         return audioPlayer.isPlaying()
     }
 
-    private fun updateIsPlaying(){
+    private fun updateIsPlaying() {
         _isPlaying.value = audioPlayer.isPlaying()
     }
 
@@ -259,7 +230,7 @@ class ImageRecordingViewModel @Inject constructor(
         updateIsPlaying()
     }
 
-    fun returnFile(): File{
+    fun returnFile(): File {
         var file: File? = null
         returnUri(_currentItem.value!!.title).path?.let {
             File(
@@ -286,7 +257,7 @@ class ImageRecordingViewModel @Inject constructor(
     // onCleared() for resource release
 
     // note that I'm using gson
-    fun saveItemListToJson(){
+    fun saveItemListToJson() {
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
         val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
@@ -296,7 +267,7 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
 
-    fun loadItemListFromJson(){
+    fun loadItemListFromJson() {
         val gson = Gson()
         val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
         val file = File(context.filesDir, JSON_FILE_NAME)
@@ -313,6 +284,82 @@ class ImageRecordingViewModel @Inject constructor(
         return file.exists()
     }
 
+
+    private fun initializeItemList() {
+        if (checkIfFileExists(JSON_FILE_NAME)) {
+            loadItemListFromJson()
+            if (newZip) {
+                compareAndMergeItemList()
+                newZip = false
+            }
+
+        } else {
+            createItemList()
+        }
+    }
+
+    private fun createItemList() {
+        _itemList.value = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
+            var imageName = imageMap.entries.first().key
+            imageName = imageName.dropLast(4).capitalizeWords()
+            Log.i("RecordScreen", "itemList re-occupied !!")
+            RecordItem(
+                id = index,
+                title = imageName, //imageMap.toString().substring(7),
+                description = "Description ${imageName}",
+                imagePath = imageMap.entries.first().value,
+                recorded = false
+            )
+        }
+    }
+
+    /**
+     * Compare the old itemList with the newly unzipped images,
+     * if there's a duplicate, keep the recorded property of the
+     * old item otherwise, give it the default value of false,
+     * fill the newImages then assign it to the itemList.
+     *
+     * */
+    private fun compareAndMergeItemList() {
+        val newImages = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
+            var imageName = imageMap.entries.first().key
+            imageName = imageName.dropLast(4).capitalizeWords()
+
+            // check if the image already exists in the itemList by its title
+            val imageExists = _itemList.value.any { it.title == imageName }
+            Log.i("RecordScreen", "newList occupied~!")
+            RecordItem(
+                id = index,
+                title = imageName, //imageMap.toString().substring(7),
+                description = "Description ${imageName}",
+                imagePath = imageMap.entries.first().value,
+                recorded = if (imageExists) _itemList.value.first { it.title == imageName }.recorded else false
+            )
+
+        }
+        _itemList.value = newImages
+    }
+
+    /**
+     * Update the recorded property of the item in the itemList
+     * once the recording is done.
+     * Re-evaluate the number of images recorded and not recorded.
+     * @param item the item instance passed from the RecordScreen
+     * */
+    fun updateItemList(item: RecordItem) {
+        val updatedItemList = _itemList.value.map {
+            if (it.id == item.id) {
+                it.copy(recorded = item.recorded)
+            } else {
+                it
+            }
+        }
+        _itemList.value = updatedItemList
+        Log.i("RecordScreen", "itemList updated !!")
+        determineNumberOfImagesRecorded()
+        determineNumberOfImagesNotRecorded()
+    }
+
     // function to take a string, replace underscores with spaces, and capitalize each word
     private fun String.capitalizeWords(): String = split("_").joinToString(" ") {
         it.replaceFirstChar { firstChar ->
@@ -322,25 +369,122 @@ class ImageRecordingViewModel @Inject constructor(
         }
     }
 
+    private fun getImagesBasedOnVersion(): Int{
+        var version = 0
+        val storageRef = application.storage.reference
+        val imagesVerRef = storageRef.child("images/version.txt")
+        val localVerFile = File(context.filesDir, "version.txt")
+        imagesVerRef.getFile(localVerFile).addOnSuccessListener {
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | version downloaded successfully"
+            )
+
+            version = extractVersionFromTextFile(localVerFile)
+            sharedPreferences.getInt("imagesVersion", -1).let {
+                if (version > it || !checkIfFileExists("images.zip")) {
+                    sharedPreferences.edit().putInt("imagesVersion", version).apply()
+                    fetchImagesFromFirebaseCloudStorage()
+                    _zipVersion.value = version
+                } else {
+                    unzipImages()
+                }
+            }
+
+        }.addOnFailureListener {
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | version download failed | error: $it"
+            )
+        }
+        return version
+    }
+
+    private fun extractVersionFromTextFile(file: File): Int{
+        var version = 0
+        try {
+            version = file.readText().toInt()
+            Log.i("RecordScreen", "extractTextFromTextFile() | text: $version")
+        } catch (e: Exception) {
+            Log.i("RecordScreen", "extractTextFromTextFile() | error: $e")
+        }
+        return version
+    }
+
+    private fun fetchImagesFromFirebaseCloudStorage() {
+        // Create a storage reference from my app
+        val storageRef = application.storage.reference
+
+        // downloading all files in a folder is not possible so instead we'll download a zip file
+        val imagesRef = storageRef.child("images/images.zip")
+        val localFile = File(context.filesDir, "images.zip")
+        imagesRef.getFile(localFile).addOnSuccessListener {
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | images downloaded successfully"
+            )
+            Toast.makeText(context, "Images downloaded successfully", Toast.LENGTH_SHORT).show()
+            newZip = true
+            unzipImages()
+
+        }.addOnFailureListener {
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | images download failed | error: $it"
+            )
+        }
+    }
+
+
+    private fun unzipImages() {
+        if (!sharedPreferences.getBoolean("imagesUnzipped", false) || newZip) {
+            val imagesZipDir = File(context.filesDir, "images.zip")
+            val destDir = context.getDir("images", MODE_PRIVATE).absolutePath
+            UnzipUtilsWithListeners.unzip(imagesZipDir, destDir, object : UnzipListener {
+                override fun onUnzipComplete() {
+                    Log.i(
+                        "RecordScreen",
+                        "fetchImagesFromFirebaseCloudStorage() | images unzip complete | destDir: $destDir"
+                    )
+                    Log.i(
+                        "RecordScreen",
+                        "fetchImagesFromFirebaseCloudStorage() | images unzip complete | listFiles: ${
+                            File(destDir).listFiles()
+                        }"
+                    )
+                    Toast.makeText(context, "Images unzip complete", Toast.LENGTH_SHORT).show()
+
+                    sharedPreferences.edit().putBoolean("imagesUnzipped", true).apply()
+                    prepareToDisplay()
+
+                }
+
+                override fun onUnzipFailed(error: Exception) {
+                    Log.i(
+                        "RecordScreen",
+                        "fetchImagesFromFirebaseCloudStorage() | images unzip failed: $error"
+                    )
+                    Toast.makeText(context, "Images unzip failed", Toast.LENGTH_SHORT).show()
+                }
+            })
+        } else {
+            prepareToDisplay()
+        }
+    }
+
+    private fun prepareToDisplay() {
+        initializeItemList()
+
+        _numberOfImages.value = itemList.value.size
+        determineNumberOfImagesRecorded()
+        determineNumberOfImagesNotRecorded()
+
+        updateCurrentItem()
+    }
+
     fun logOut() {
         application.firebaseAuth.signOut()
         sharedPreferences.edit().clear().apply()
-    }
-
-    fun fetchImagesFromFirebaseCloudStorage() {
-        // Create a storage reference from our app
-        val storageRef = application.storage.reference
-
-        // download all files in "images" folder
-        val imagesRef = storageRef.child("images/images.zip")
-        val localFile = File(context.filesDir, "images")
-        imagesRef.getFile(localFile).addOnSuccessListener {
-            // Local temp file has been created
-            Log.i("RecordScreen", "fetchImagesFromFirebaseCloudStorage() | images downloaded successfully")
-        }.addOnFailureListener {
-            // Handle any errors
-            Log.i("RecordScreen", "fetchImagesFromFirebaseCloudStorage() | images download failed")
-        }
     }
 
     companion object {

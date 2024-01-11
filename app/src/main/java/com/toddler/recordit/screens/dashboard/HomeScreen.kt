@@ -67,6 +67,9 @@ import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
 import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.ui.theme.Abel
+import com.toddler.recordit.ui.theme.Gray
+import com.toddler.recordit.ui.theme.MyBlack
+import com.toddler.recordit.ui.theme.MyDarkGray
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Orange
 import com.toddler.recordit.ui.theme.Red
@@ -242,8 +245,15 @@ fun HomeScreen(
                     modifier = Modifier
                         .weight(0.7f)
                         .fillMaxSize(),
-                    contentAlignment = Alignment.BottomEnd
+//                    contentAlignment = Alignment.BottomEnd
                 ) {
+                    Text(text = "version: ${viewModel.zipVersion.collectAsState().value}",
+                        fontSize = 18.sp,
+                        fontFamily = Russo,
+                        color = Gray,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(horizontal = 8.dp, vertical = 24.dp),)
                     ExtendedFloatingActionButton(
                         text = {
                             Text(
