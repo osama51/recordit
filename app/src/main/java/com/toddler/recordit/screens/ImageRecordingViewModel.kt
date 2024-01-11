@@ -200,7 +200,8 @@ class ImageRecordingViewModel @Inject constructor(
             audioRecorder.start(outputFile)
             // check if audioRecorder started successfully
 
-
+            // TODO: Check what's causing the next and previous buttons to recompose
+            //  when the recording and then again when stopping~!
 
             Log.i("RecordScreen", "Started Recording")
             _recordedFilePath.value =
