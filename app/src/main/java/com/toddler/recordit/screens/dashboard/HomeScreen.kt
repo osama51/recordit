@@ -74,7 +74,6 @@ import com.toddler.recordit.ui.theme.Abel
 import com.toddler.recordit.ui.theme.Gray
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Russo
-import com.toddler.recordit.ui.theme.fontFamily
 import com.toddler.recordit.upload.UploadCompletionListener
 import kotlinx.coroutines.launch
 import java.io.File
@@ -226,6 +225,14 @@ fun HomeScreen(
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.Bottom
                     ) {
+                        Text(
+                            text = "version: ${viewModel.zipVersion.collectAsState().value}",
+                            fontSize = 12.sp,
+                            fontFamily = Abel,
+                            color = Gray,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 16.dp),
+                        )
                         Divider()
                         NavigationDrawerItem(
                             modifier = Modifier
@@ -344,20 +351,10 @@ fun HomeScreen(
                         .fillMaxSize(),
 //                    contentAlignment = Alignment.BottomEnd
                 ) {
-
-                    Text(
-                        text = "version: ${viewModel.zipVersion.collectAsState().value}",
-                        fontSize = 18.sp,
-                        fontFamily = Russo,
-                        color = Gray,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(horizontal = 8.dp, vertical = 24.dp),
-                    )
                     ExtendedFloatingActionButton(
                         text = {
                             Text(
-                                text = getString(context, R.string.start_slideshow),
+                                text = getString(context, R.string.start_record_screen),
 //                            fontFamily = Abel,
                             )
                         },
@@ -365,7 +362,7 @@ fun HomeScreen(
                             Icon(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = "Start slideshow icon"
+                                contentDescription = "Start icon"
                             )
                         },
                         modifier = Modifier

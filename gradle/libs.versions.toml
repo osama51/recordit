@@ -21,6 +21,7 @@ navigationCompose = "2.5.2"
 viewmodelLifeCycleCompose = "2.6.1"
 hilt = "1.1.0"
 firebaseStorageKtx = "20.3.0"
+volley = "1.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +45,7 @@ play-services-auth = { module = "com.google.android.gms:play-services-auth", ver
 #glide-compose = { group = "com.github.bumptech.glide", name = "glide-compose", version.ref = "glideCompose" }
 #glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glideCompiler" }
 landscapist-glide = { group = "com.github.skydoves", name = "landscapist-glide", version.ref = "landscapist" }
+landscapist-coil = { group = "com.github.skydoves", name = "landscapist-coil", version.ref = "landscapist" }
 landscapist-placeholder = { group = "com.github.skydoves", name = "landscapist-placeholder", version.ref = "landscapist" }
 landscapist-animation = { group = "com.github.skydoves", name = "landscapist-animation", version.ref = "landscapist" }
 landscapist-transformation = { group = "com.github.skydoves", name = "landscapist-transformation", version.ref = "landscapist" }
@@ -60,6 +62,7 @@ viewmodel-lifeCycle = { group = "androidx.lifecycle", name = "lifecycle-viewmode
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

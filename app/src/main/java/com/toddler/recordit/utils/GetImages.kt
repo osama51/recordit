@@ -46,13 +46,15 @@ fun getImagesFromAssets(context: Context): MutableList<Map<String, String>> {
 fun getImagesFromFilesDir(context: Context): MutableList<Map<String, String>> {
 
     // get files in images folder inside filesDir
-     val files = context.getDir("images", Context.MODE_PRIVATE).listFiles()
+    val files = context.getDir("images", Context.MODE_PRIVATE).listFiles()
     Log.i("getImagesFromFilesDir", "getDir: ${context.getDir("images", Context.MODE_PRIVATE)}")
-    Log.i("getImagesFromFilesDir", "files: $files")
+
     val mapImages = mutableListOf<Map<String, String>>()
-    context.getDir("images", Context.MODE_PRIVATE).listFiles()?.forEach {
+    files?.forEach {
+        // print its name and size in kb
+        Log.i("getImagesFromFilesDir", "getImagesFromFilesDir: ${it.name} (${it.length() / 1024} kb)")
         if (validFile(it.name)) {
-            mapImages.add(mapOf(it.name to it.absolutePath))
+            mapImages.add(mapOf(it.nameWithoutExtension to it.absolutePath))
         } else {
             Log.d("getImagesFromFilesDir", "File ${it.name} is not an image")
         }
@@ -64,8 +66,8 @@ fun getImagesFromFilesDir(context: Context): MutableList<Map<String, String>> {
 
 
 fun validFile(fileName: String): Boolean {
-// check if fileName ends with .jpg or .png
-    val regex = Regex(pattern = "(.jpeg|.jpg|.png)$")
+// check if fileName ends with .webp, .jpeg, .jpg or .png, will add more as if needed
+    val regex = Regex(pattern = "(.webp|.jpeg|.jpg|.png)$")
     val result = regex.find(input = fileName)
 //    if (result == null) {
 //        throw IOException("File $fileName is not an image")

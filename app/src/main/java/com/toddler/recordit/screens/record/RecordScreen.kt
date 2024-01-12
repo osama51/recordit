@@ -2,6 +2,7 @@ package com.toddler.recordit.screens.record
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -51,11 +52,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.animation.crossfade.CrossfadePlugin
+import com.skydoves.landscapist.coil.CoilImage
+import com.skydoves.landscapist.components.LocalImageComponent
 import com.skydoves.landscapist.components.rememberImageComponent
-import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.transformation.blur.BlurTransformationPlugin
 import com.toddler.recordit.R
 import com.toddler.recordit.screens.ImageRecordingViewModel
+import com.toddler.recordit.ui.theme.DarkGrayThreeQuartersTransparent
 import com.toddler.recordit.ui.theme.DarkGrayHalfTransparent
 import com.toddler.recordit.ui.theme.NavyDark
 import com.toddler.recordit.ui.theme.OffWhite
@@ -87,10 +90,13 @@ fun ScreenContent(
 //    val item by rememberSaveable(stateSaver = RecordItemSaver) { mutableStateOf(viewModel.currentItem.value!!) }
 
     val item = viewModel.currentItem.collectAsState().value!!
+
     val drawable by lazy {
 //        Drawable.createFromStream(context.assets.open("${item.imagePath}"), null)
 
         Drawable.createFromPath(item.imagePath)
+
+//        Uri.parse(item.imagePath)
 
 //        val bitmap = BitmapFactory.decodeStream(context.assets.open(item.imagePath))
 //        val outputStream = ByteArrayOutputStream()
@@ -123,7 +129,10 @@ fun ScreenContent(
                     .fillMaxWidth()
 //                    .background(Color.White)
             ) {
-                GlideImage(
+                /** looks like coil can handle uri, but the performance was not good at all !!
+                 *  maybe because android loves drawables more than anything ?
+                 * */
+                CoilImage(
                     imageModel = { drawable },
                     component = rememberImageComponent {
                         +CrossfadePlugin(duration = 1000)
@@ -169,7 +178,7 @@ fun ScreenContent(
                         .size(60.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
                         .align(Alignment.TopStart),
                     contentPadding = PaddingValues(16.dp),
-                    elevation = ButtonDefaults.buttonElevation(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp), //12.dp
                     colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color.White,
                         contentColor = NavyDark,
@@ -356,20 +365,25 @@ fun ScreenContent(
 
                             Box(
                                 modifier = Modifier
-                                    .padding(8.dp)
+                                    .padding(8.dp) /** notice padding is added before size which adds to the total size */
                                     .size(72.dp), //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
 //                                .align(Alignment.BottomCenter)
                             ) {
                                 if (recorded) {
                                     ElevatedButton(
                                         modifier = Modifier
-                                            .padding(8.dp) //.background(Navy, shape = androidx.compose.foundation.shape.CircleShape)
+                                            .padding(8.dp) // make it a bit smaller than the record button
                                             .align(Alignment.BottomCenter),
                                         contentPadding = PaddingValues(12.dp),
 //                                    elevation = ButtonDefaults.buttonElevation(12.dp),
                                         colors = ButtonDefaults.elevatedButtonColors(
-                                            containerColor = Color.Transparent,
-                                            contentColor = NavyDark,
+                                            containerColor = DarkGrayThreeQuartersTransparent,
+                                            contentColor = NavyDark, // the press effect
+                                        ),
+                                        elevation = ButtonDefaults.elevatedButtonElevation(
+                                            defaultElevation = 0.dp,
+                                            pressedElevation = 0.dp,
+                                            disabledElevation = 0.dp,
                                         ),
                                         onClick = {
                                             viewModel.apply {
@@ -439,7 +453,7 @@ fun ScreenContent(
 
 @Composable
 private fun BlurredImage(imageDrawable: Drawable, modifier: Modifier = Modifier) {
-    return GlideImage(
+    return CoilImage(
         imageModel = { imageDrawable },
         component = rememberImageComponent {
             +CrossfadePlugin(duration = 1000)

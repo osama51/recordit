@@ -3,13 +3,21 @@ package com.toddler.recordit.screens
 import android.Manifest
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.gson.Gson
+import com.toddler.recordit.LoginActivity
 import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
 import com.toddler.recordit.playback.AndroidAudioPlayer
@@ -25,7 +33,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 import java.util.Locale
 import javax.inject.Inject
 
@@ -88,7 +98,10 @@ class ImageRecordingViewModel @Inject constructor(
     // State flows and other properties remain the same
 
     init {
+        viewModelScope.launch {
+
         getImagesBasedOnVersion()
+        }
     }
 
     private fun updateCurrentItem() {
@@ -312,7 +325,7 @@ class ImageRecordingViewModel @Inject constructor(
     private fun createItemList() {
         _itemList.value = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
             var imageName = imageMap.entries.first().key
-            imageName = imageName.dropLast(4).capitalizeWords()
+            imageName = imageName.capitalizeWords() // no need to drop the extension anymore, since I'm passing file name without extension
             Log.i("RecordScreen", "itemList re-occupied !!")
             RecordItem(
                 id = index,
@@ -335,7 +348,7 @@ class ImageRecordingViewModel @Inject constructor(
     private fun compareAndMergeItemList() {
         val newImages = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
             var imageName = imageMap.entries.first().key
-            imageName = imageName.dropLast(4).capitalizeWords()
+            imageName = imageName.capitalizeWords()
 
             // check if the image already exists in the itemList by its title
             val imageExists = _itemList.value.any { it.title == imageName }
@@ -444,7 +457,27 @@ class ImageRecordingViewModel @Inject constructor(
         }
     }
 
-
+    /**
+     *
+     * we didn't use filesDir and used getDir() in creating a sub folder because it ensures
+     * consistency with Android's internal storage structure and handles potential conflicts
+     * or naming restrictions.
+     *
+     * and it works reliably across different Android versions, addressing potential compatibility
+     * issues that might arise with manual string concatenation.
+     *
+     * the result is: /data/user/0/com.toddler.recordit/app_images
+     *
+     * Android automatically adds the "app_" prefix to user-created directories within
+     * the app's private storage to avoid conflicts with system-defined folders like "cache," "databases," etc.
+     *
+     * It visually distinguishes app-specific folders from those managed by the system,
+     * enhancing clarity and organization.
+     *
+     * While the prefix is visible in the file path, you typically interact with the directory
+     * using its original name (e.g., "images") within your app's code.
+     *
+     * */
     private fun unzipImages() {
         if (!sharedPreferences.getBoolean("imagesUnzipped", false) || newZip) {
             val imagesZipDir = File(context.filesDir, "images.zip")
@@ -464,6 +497,9 @@ class ImageRecordingViewModel @Inject constructor(
                     Toast.makeText(context, "Images unzip complete", Toast.LENGTH_SHORT).show()
 
                     sharedPreferences.edit().putBoolean("imagesUnzipped", true).apply()
+
+//                    convertImagesToWebP()
+
                     prepareToDisplay()
 
                 }
@@ -478,6 +514,38 @@ class ImageRecordingViewModel @Inject constructor(
             })
         } else {
             prepareToDisplay()
+        }
+    }
+
+    // function to convert jpeg and png images to webp format
+    private fun convertImagesToWebP() {
+        val imagesDir = context.getDir("images", MODE_PRIVATE).absolutePath
+        val imagesDirFile = File(imagesDir)
+        val images = imagesDirFile.listFiles()
+        try {
+            images?.forEach { file ->
+                val bmp = BitmapFactory.decodeFile(file.absolutePath)
+                FileOutputStream(file).use { out ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        bmp.compress(Bitmap.CompressFormat.WEBP_LOSSLESS,50,out) // or WEBP_LOSSY
+                        out.close()
+                        Log.i("RecordScreen", "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb")
+                        Log.i("RecordScreen", "convertImagesToWebP() | ${out} size: ${out.channel.size() / 1024} kb")
+
+                    } else {
+                        bmp.compress(Bitmap.CompressFormat.WEBP,50,out)
+                        out.close() // close the stream to ensure that the file is written?
+                        Log.i("RecordScreen", "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb")
+                        Log.i("RecordScreen", "convertImagesToWebP() | ${out.fd} size: ${out.channel.size() / 1024} kb")
+                    }
+                }
+            }
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | images converted to webp"
+            )
+        } catch (e: Exception) {
+            Log.i("RecordScreen", "convertImagesToWebP() | error: $e")
         }
     }
 
@@ -514,7 +582,13 @@ class ImageRecordingViewModel @Inject constructor(
 
 
     fun logOut() {
+        val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(LoginActivity.SERVER_CLIENT_ID)
+            .requestEmail()
+            .build()
+        val googleSignInClient = GoogleSignIn.getClient(context, googleSignInOptions)
         application.firebaseAuth.signOut()
+        googleSignInClient.revokeAccess()
 //        sharedPreferences.edit().clear().apply()
     }
 

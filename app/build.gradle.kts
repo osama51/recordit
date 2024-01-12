@@ -61,7 +61,8 @@ dependencies {
 //    implementation(libs.glide)
 //    implementation(libs.glide.compose)
 //    annotationProcessor(libs.glide.compiler)
-    implementation(libs.landscapist.glide)
+//    implementation(libs.landscapist.glide)
+    implementation(libs.landscapist.coil)
     implementation(libs.landscapist.placeholder)
     implementation(libs.landscapist.animation)
     implementation(libs.landscapist.transformation)
@@ -72,6 +73,7 @@ dependencies {
 
 
     implementation("com.google.dagger:hilt-android:2.48")
+
 //    kapt("com.google.dagger:hilt-android-compiler:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
 

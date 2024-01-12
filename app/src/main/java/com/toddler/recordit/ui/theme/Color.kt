@@ -22,7 +22,7 @@ val unselectedColor = Color(0xFFFFFFFF)
 val Navy = Color(0xFF2B3B53)
 val NavyDark = Color(0xFF1E2A40)
 
-val Gray = Color(0xFFA8A8A8)
+val Gray = Color(0xFF777777)
 val OffWhite = Color(0xFFD8D8D8)
 
 val White = Color(0xFFFFFFFF)
@@ -31,3 +31,4 @@ val MyDarkGray = Color(0xFF696969)
 val Transparent = Color(0x00000000)
 
 val DarkGrayHalfTransparent = Color(0x80000000)
+val DarkGrayThreeQuartersTransparent = Color(0x2A000000)
