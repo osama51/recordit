@@ -265,7 +265,7 @@ class ImageRecordingViewModel @Inject constructor(
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
         val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
-        return Uri.parse("${uidDir}/${imageTitle.replace(" ", "_")}.mp3")
+        return Uri.parse("${uidDir}/${imageTitle.replace(" ", "_")}.wav")
 //        }
     }
 
@@ -482,15 +482,22 @@ class ImageRecordingViewModel @Inject constructor(
         if (!sharedPreferences.getBoolean("imagesUnzipped", false) || newZip) {
             val imagesZipDir = File(context.filesDir, "images.zip")
             val destDir = context.getDir("images", MODE_PRIVATE).absolutePath
+            // we need first to delete the old images inside the images folder
+            val imagesDir = File(destDir).listFiles()
+            imagesDir?.forEach {
+                it.delete()
+                Log.i("RecordScreen", "unzipImages() | ${it.name} deleted")
+            }
+
             UnzipUtilsWithListeners.unzip(imagesZipDir, destDir, object : UnzipListener {
                 override fun onUnzipComplete() {
                     Log.i(
                         "RecordScreen",
-                        "fetchImagesFromFirebaseCloudStorage() | images unzip complete | destDir: $destDir"
+                        "unzipImages() | images unzip complete | destDir: $destDir"
                     )
                     Log.i(
                         "RecordScreen",
-                        "fetchImagesFromFirebaseCloudStorage() | images unzip complete | listFiles: ${
+                        "unzipImages() | images unzip complete | listFiles: ${
                             File(destDir).listFiles()
                         }"
                     )

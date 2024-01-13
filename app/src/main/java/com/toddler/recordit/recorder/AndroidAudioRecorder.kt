@@ -23,10 +23,38 @@ class AndroidAudioRecorder(
 
     override fun start(outputFile: File) {
         createRecorder().apply {
+//            setAudioSource(MediaRecorder.AudioSource.MIC)
+//            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+//            setOutputFile(FileOutputStream(outputFile).fd) // works for lower api levels
+
+            /** for m4a audio files (actually not bad) */
+//            setAudioSource(MediaRecorder.AudioSource.MIC)
+//            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+//            setAudioEncodingBitRate(16*44100)
+//            setAudioSamplingRate(44100)
+//            setOutputFile(FileOutputStream(outputFile).fd) // works for lower api levels
+
+
+            /** for wav audio files */
+
+            /**
+             * Although WAV isn't directly available, using THREE_GPP with the correct encoder and settings will create a lossless WAV file.
+             *
+             * AMR_NB is the encoder for Adaptive Multi-Rate Narrowband audio, which produces uncompressed PCM data for WAV files.
+             *
+             * The standard sampling rate for high-quality audio is 44100 Hz.
+             *
+             *  As for EncodingBitRate, WAV is a lossless format and doesn't involve bit rate compression
+             *
+             * */
             setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setAudioSamplingRate(44100)
             setOutputFile(FileOutputStream(outputFile).fd) // works for lower api levels
+
 
             prepare()
             start()

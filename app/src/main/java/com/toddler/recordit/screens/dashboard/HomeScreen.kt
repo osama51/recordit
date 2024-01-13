@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -325,9 +329,16 @@ fun HomeScreen(
                 HorizontalPager(
                     modifier = Modifier
                         .padding(0.dp, 24.dp)
-                        .weight(1f),
+                        .weight(1f)
+                    ,
+                    beyondBoundsPageCount = 0,
                     contentPadding = PaddingValues(horizontal = 32.dp),
-                    pageSpacing = 16.dp, state = pagerState
+                    pageSpacing = 16.dp, state = pagerState,
+                    flingBehavior = PagerDefaults.flingBehavior(
+                        state = pagerState,
+                        pagerSnapDistance = PagerSnapDistance.atMost(numberOfImages),
+//                        lowVelocityAnimationSpec = AnimationSpec(1f),
+                    ),
                 ) { page ->
                     CarouselItem(context, viewModel.itemList.collectAsState().value[page])
                 }

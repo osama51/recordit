@@ -243,6 +243,12 @@ fun ScreenContent(
                     ) {
                         var canGoNext = viewModel.canNavigateToNextItem()
                         var canGoPrevious = viewModel.canNavigateToPreviousItem()
+
+                        /****************************
+                         *
+                         * Previous Item Arrow Button
+                         *
+                         ****************************/
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -280,7 +286,7 @@ fun ScreenContent(
                             var isRecordingLocal by remember { mutableStateOf(false) }
 //                        val audioFile = File(context.cacheDir, "audio.mp3")
 
-                            val isPlaying = viewModel.isPlaying.collectAsState().value
+                            val isPlaying = viewModel.isPlaying.collectAsState().value // better use the viewModel.isPlaying() method upon checking the value, no need to collect it
                             val buttonIcon = viewModel.buttonIcon.collectAsState().value
 
 
@@ -306,7 +312,7 @@ fun ScreenContent(
                                 interactionSource = interactionSource, // remember to pass the source, the source is used to collect the interaction state from the button and can be aquired from the interactionSource.collectIsPressedAsState() method
                                 onClick = { },
                             ) {
-                                if (pressed && !isPlaying) {
+                                if (pressed && !viewModel.isPlaying()) {
                                     val currentMillis = System.currentTimeMillis()
                                     LaunchedEffect(Unit) {
                                         coroutineScope.launch {
@@ -387,7 +393,7 @@ fun ScreenContent(
                                         ),
                                         onClick = {
                                             viewModel.apply {
-                                                if (!isPlaying) {
+                                                if (!viewModel.isPlaying()) {
                                                     startPlayback()
                                                 } else {
                                                     stopPlayback()
@@ -407,6 +413,13 @@ fun ScreenContent(
 
                             }
                         }
+
+                        /*************************
+                         *
+                         * Next Item Arrow Button
+                         *
+                         ************************/
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
