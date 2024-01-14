@@ -7,4 +7,15 @@
     <!--    TOP SECRET ... DO NOT LOOK    -->
 <!--    No, no just kidding, it's not a secret, it's just an identifier for the app. so who cares.-->
     <string name="start_record_screen">Get Started</string>
+
+    <string name="downloading_message">Downloading images…</string>
+    <string name="extracting_message">Preparing images…</string>
+    <string name="loading_message">Loading images…</string>
+    <string name="error_downloading_message">Error downloading images</string>
+    <string name="error_extracting_message">Error extracting images</string>
+    <string name="error_no_internet_message">No internet connection</string>
+    <string name="error_loading_message">Error loading images</string>
+    <string name="no_images_message">Images not loaded</string>
+
+    <string name="retry">Retry</string>
 </resources>

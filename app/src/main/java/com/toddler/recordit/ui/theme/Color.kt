@@ -13,6 +13,8 @@ val Pink40 = Color(0xFF7D5260)
 val Red = Color(0xFFBB3D31)
 val Orange = Color(0xFFE95B4D)
 
+val ErrorRed = Color(0xFFB87171)
+
 
 val DarkRed = Color(0xFF862415)
 
@@ -27,7 +29,7 @@ val OffWhite = Color(0xFFD8D8D8)
 
 val White = Color(0xFFFFFFFF)
 val MyBlack = Color(0xFF272727)
-val MyDarkGray = Color(0xFF696969)
+val MyDarkGray = Color(0xFF585858)
 val Transparent = Color(0x00000000)
 
 val DarkGrayHalfTransparent = Color(0x80000000)

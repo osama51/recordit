@@ -9,13 +9,15 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.google.gson.Gson
 import com.toddler.recordit.LoginActivity
 import com.toddler.recordit.MyApplication
@@ -25,9 +27,7 @@ import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.record.RecordItem
 import com.toddler.recordit.upload.UploadCompletionListener
 import com.toddler.recordit.utils.UnzipListener
-import com.toddler.recordit.utils.UnzipUtils
 import com.toddler.recordit.utils.UnzipUtilsWithListeners
-import com.toddler.recordit.utils.getImagesFromAssets
 import com.toddler.recordit.utils.getImagesFromFilesDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -95,16 +95,28 @@ class ImageRecordingViewModel @Inject constructor(
     private val _numberOfImagesNotRecorded = MutableStateFlow(0)
     val numberOfImagesNotRecorded: StateFlow<Int> = _numberOfImagesNotRecorded
 
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading
+
+    private val _loadingState = MutableStateFlow<LoadingStates>(LoadingStates.NONE)
+    val loadingState: StateFlow<LoadingStates> = _loadingState
+
+    private val _connected = MutableStateFlow(false)
+    val connected: StateFlow<Boolean> = _connected
+
+    var checkedNetwork = false
+
     // State flows and other properties remain the same
 
     init {
         viewModelScope.launch {
-
-        getImagesBasedOnVersion()
+            checkIfUserIsConnected()
+            getImagesBasedOnVersion()
         }
     }
 
     private fun updateCurrentItem() {
+        if(_itemList.value.isEmpty()) return
         // set current item as first item not recorded
         _currentItem.value = _itemList.value.firstOrNull { !it.recorded } ?: _itemList.value.last()
         _currentItemIndex.value = _itemList.value.indexOf(_currentItem.value)
@@ -116,6 +128,7 @@ class ImageRecordingViewModel @Inject constructor(
          * */
 
         _audioFile.value = returnFile()
+        _loadingState.value = LoadingStates.DONE
         Log.i("RecordScreen", "updateCurrentItem() called | ${_currentItem.value}")
     }
 
@@ -125,7 +138,6 @@ class ImageRecordingViewModel @Inject constructor(
         }
         /**
          *لا تنسي أخاك, ترعاه يداك
-         * لا تنسي أخاك, ترعاه يداك
          *
          * */
         _currentItem.value = _itemList.value[_currentItemIndex.value + 1] // أنت
@@ -138,7 +150,6 @@ class ImageRecordingViewModel @Inject constructor(
         }
         /**
          *لا تنسي أخاك, ترعاه يداك
-         * لا تنسي أخاك, ترعاه يداك
          *
          * */
         _currentItem.value = _itemList.value[_currentItemIndex.value - 1] // أنت
@@ -271,7 +282,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     // onCleared() for resource release
 
-    // note that I'm using gson
+    /** note that I'm using gson */
     fun saveItemListToJson() {
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
@@ -386,15 +397,64 @@ class ImageRecordingViewModel @Inject constructor(
         determineNumberOfImagesNotRecorded()
     }
 
-    private fun getImagesBasedOnVersion(): Int{
-        var version = 0
+    // check internet connection
+    fun checkInternetConnection(): Boolean {
+        return application.checkInternetConnection()
+    }
+
+    // fun to get reference to .info/connected in firebase realtime database and check if the user is connected
+    fun checkIfUserIsConnected() {
+        val ref = application.database.getReference(".info/connected")
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                _connected.value = snapshot.getValue(Boolean::class.java) ?: false
+                if (_connected.value) {
+                    Log.d("checkIfUserIsConnected", "connected")
+                } else {
+                    Log.d("checkIfUserIsConnected", "not connected")
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w("checkIfUserIsConnected", "Listener was cancelled")
+            }
+        })
+        setActiveListener()
+    }
+
+    /**
+     * set any active listener to prevent Firebase from
+     * closing the connection after 60 seconds of inactivity.
+     *
+     */
+
+    private fun setActiveListener(){
+        val connectedRef = application.database.getReference("connect")
+        connectedRef.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+            }
+            override fun onCancelled(error: DatabaseError) {
+            }
+        })
+        connectedRef.keepSynced(true)
+    }
+
+    fun getImagesBasedOnVersion(): Int{
         val storageRef = application.storage.reference
         val imagesVerRef = storageRef.child("images/version.txt")
         val localVerFile = File(context.filesDir, "version.txt")
+        var version = sharedPreferences.getInt("imagesVersion", -1)
+
+        if(application.checkInternetConnection() && _connected.value){
+            Log.i("RecordScreen", "getImagesBasedOnVersion() | internet connection available")
+        } else {
+            Log.i("RecordScreen", "getImagesBasedOnVersion() | no internet connection")
+            prepareToDisplay()
+        }
         imagesVerRef.getFile(localVerFile).addOnSuccessListener {
             Log.i(
                 "RecordScreen",
-                "fetchImagesFromFirebaseCloudStorage() | version downloaded successfully"
+                "getImagesBasedOnVersion() | version downloaded successfully"
             )
 
             version = extractVersionFromTextFile(localVerFile)
@@ -412,7 +472,7 @@ class ImageRecordingViewModel @Inject constructor(
             prepareToDisplay()
             Log.i(
                 "RecordScreen",
-                "fetchImagesFromFirebaseCloudStorage() | version download failed | error: $it"
+                "getImagesBasedOnVersion() | version download failed | error: $it"
             )
         }
         return version
@@ -434,6 +494,7 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     private fun fetchImagesFromFirebaseCloudStorage() {
+        _loadingState.value = LoadingStates.DOWNLOADING
         // Create a storage reference from my app
         val storageRef = application.storage.reference
 
@@ -450,6 +511,7 @@ class ImageRecordingViewModel @Inject constructor(
             unzipImages()
 
         }.addOnFailureListener {
+            _loadingState.value = LoadingStates.ERROR_DOWNLOADING
             Log.i(
                 "RecordScreen",
                 "fetchImagesFromFirebaseCloudStorage() | images download failed | error: $it"
@@ -480,6 +542,7 @@ class ImageRecordingViewModel @Inject constructor(
      * */
     private fun unzipImages() {
         if (!sharedPreferences.getBoolean("imagesUnzipped", false) || newZip) {
+            _loadingState.value = LoadingStates.EXTRACTING
             val imagesZipDir = File(context.filesDir, "images.zip")
             val destDir = context.getDir("images", MODE_PRIVATE).absolutePath
             // we need first to delete the old images inside the images folder
@@ -512,9 +575,10 @@ class ImageRecordingViewModel @Inject constructor(
                 }
 
                 override fun onUnzipFailed(error: Exception) {
+                    _loadingState.value = LoadingStates.ERROR_EXTRACTING
                     Log.i(
                         "RecordScreen",
-                        "fetchImagesFromFirebaseCloudStorage() | images unzip failed: $error"
+                        "unzipImages() | images unzip failed: $error"
                     )
                     Toast.makeText(context, "Images unzip failed", Toast.LENGTH_SHORT).show()
                 }
@@ -549,7 +613,7 @@ class ImageRecordingViewModel @Inject constructor(
             }
             Log.i(
                 "RecordScreen",
-                "fetchImagesFromFirebaseCloudStorage() | images converted to webp"
+                "convertImagesToWebP() | images converted to webp"
             )
         } catch (e: Exception) {
             Log.i("RecordScreen", "convertImagesToWebP() | error: $e")
@@ -557,6 +621,7 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     private fun prepareToDisplay() {
+        _loadingState.value = LoadingStates.LOADING
         initializeItemList()
 
         _numberOfImages.value = itemList.value.size
@@ -568,21 +633,26 @@ class ImageRecordingViewModel @Inject constructor(
 
     // loop over the audio files in the uidDir and upload them to firebase storage
     fun uploadAudioFiles(completionListener: UploadCompletionListener? = null) {
-        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
-        val uidDirFile = File(uidDir)
-        val audioFiles = uidDirFile.listFiles()
-        var successfulUploads = 0
-        audioFiles?.forEach { file ->
-            val storageRef = application.storage.reference
-            val audioRef = storageRef.child("${application.firebaseAuth.currentUser?.uid}/${file.name}")
-            audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
-                successfulUploads++
-                if (successfulUploads == _numberOfImagesRecorded.value) {
-                    completionListener?.onUploadComplete()
+        if(!_isUploading.value){
+            val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+            val uidDirFile = File(uidDir)
+            val audioFiles = uidDirFile.listFiles()
+            var successfulUploads = 0
+            _isUploading.value = true
+            audioFiles?.forEach { file ->
+                val storageRef = application.storage.reference
+                val audioRef = storageRef.child("${application.firebaseAuth.currentUser?.uid}/${file.name}")
+                audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
+                    successfulUploads++
+                    if (successfulUploads == _numberOfImagesRecorded.value) {
+                        _isUploading.value = false
+                        completionListener?.onUploadComplete()
+                    }
+                    Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
+                }.addOnFailureListener {
+                    _isUploading.value = false
+                    Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} upload failed | error: $it")
                 }
-                Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
-            }.addOnFailureListener {
-                Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} upload failed | error: $it")
             }
         }
     }

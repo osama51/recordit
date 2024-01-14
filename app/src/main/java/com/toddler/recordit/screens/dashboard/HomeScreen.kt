@@ -8,7 +8,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
@@ -43,6 +41,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,11 +73,14 @@ import com.toddler.recordit.MainActivity
 import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
 import com.toddler.recordit.screens.ImageRecordingViewModel
+import com.toddler.recordit.screens.LoadingStates
 import com.toddler.recordit.ui.theme.Abel
+import com.toddler.recordit.ui.theme.ErrorRed
 import com.toddler.recordit.ui.theme.Gray
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Russo
 import com.toddler.recordit.upload.UploadCompletionListener
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -103,6 +105,21 @@ fun HomeScreen(
     val application = viewModel.applicationContext as MyApplication
     val googleUserName = application.firebaseAuth.currentUser?.displayName
 
+    val numberOfImages = viewModel.numberOfImages.collectAsState().value
+    val numberOfImagesNotRecorded = viewModel.numberOfImagesNotRecorded.collectAsState().value
+
+    val loadingState = viewModel.loadingState.collectAsState().value
+    val connected = viewModel.connected.collectAsState().value
+    val uploading = viewModel.isUploading.collectAsState().value
+
+    var showNetworkMsg by remember { mutableStateOf(false) }
+
+    var imagesReady by remember { mutableStateOf(false) }
+
+    var message by remember { mutableStateOf("") }
+
+
+
     val snackbarHostState = remember { SnackbarHostState() }
     val state = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
     val launcher =
@@ -122,8 +139,6 @@ fun HomeScreen(
         },
     ) {
         viewModel.determineNumberOfImagesNotRecorded()
-        val numberOfImages = viewModel.numberOfImages.collectAsState().value
-        val numberOfImagesNotRecorded = viewModel.numberOfImagesNotRecorded.collectAsState().value
 
         val pagerState = rememberPagerState(
             initialPage = 0,
@@ -136,11 +151,13 @@ fun HomeScreen(
         ModalNavigationDrawer(
             drawerContent = {
                 ModalDrawerSheet {
-                    Column(modifier = Modifier
-                        .weight(3f)
-                        .padding(start = 32.dp)
-                        .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Center,){
+                    Column(
+                        modifier = Modifier
+                            .weight(3f)
+                            .padding(start = 32.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
                         Text(
                             text = "$googleUserName",
                             fontSize = 28.sp,
@@ -151,7 +168,6 @@ fun HomeScreen(
                     }
 
                     Divider()
-                    var uploadingFlag by remember { mutableStateOf(false) }
                     Column(
                         modifier = Modifier
                             .weight(5f)
@@ -178,12 +194,10 @@ fun HomeScreen(
                                         ).show()
                                         return@launch
                                     } else {
-                                        uploadingFlag = true
                                         viewModel.uploadAudioFiles(object :
                                             UploadCompletionListener {
                                             override fun onUploadComplete() {
                                                 // All files uploaded successfully
-                                                uploadingFlag = false
                                                 Toast.makeText(
                                                     context,
                                                     "Uploaded ${viewModel.numberOfImagesRecorded.value} records successfully",
@@ -195,8 +209,7 @@ fun HomeScreen(
                                                 file: File,
                                                 exception: Exception
                                             ) {
-                                                uploadingFlag = false
-                                                // Handle individual upload failure
+                                                // Handle individual upload failure, haven't set it up yet
                                                 Toast.makeText(
                                                     context,
                                                     "Upload failed for ${file.name}",
@@ -210,7 +223,7 @@ fun HomeScreen(
                             },
                             icon = {
                                 Box(Modifier.size(30.dp)) {
-                                    if (uploadingFlag) {
+                                    if (uploading) {
                                         CircularProgressIndicator(Modifier.align(Alignment.Center))
                                     } else {
                                         Icon(
@@ -241,9 +254,13 @@ fun HomeScreen(
                         NavigationDrawerItem(
                             modifier = Modifier
                                 .padding(bottom = 32.dp),
-                            label = { Text(text = "Log out",
-                                fontFamily = Abel,
-                                fontSize = 24.sp) },
+                            label = {
+                                Text(
+                                    text = "Log out",
+                                    fontFamily = Abel,
+                                    fontSize = 24.sp
+                                )
+                            },
                             selected = false,
                             onClick = logOut,
                             icon = {
@@ -326,35 +343,81 @@ fun HomeScreen(
 
 //                }
                 }
-                HorizontalPager(
+                Column(
                     modifier = Modifier
-                        .padding(0.dp, 24.dp)
-                        .weight(1f)
+                        .weight(1.3f)
+                        .fillMaxWidth()
                     ,
-                    beyondBoundsPageCount = 0,
-                    contentPadding = PaddingValues(horizontal = 32.dp),
-                    pageSpacing = 16.dp, state = pagerState,
-                    flingBehavior = PagerDefaults.flingBehavior(
-                        state = pagerState,
-                        pagerSnapDistance = PagerSnapDistance.atMost(numberOfImages),
-//                        lowVelocityAnimationSpec = AnimationSpec(1f),
-                    ),
-                ) { page ->
-                    CarouselItem(context, viewModel.itemList.collectAsState().value[page])
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // make sure it is the same value for one second
+                    LaunchedEffect(connected) {
+                        delay(1000)
+                        showNetworkMsg = !connected
+                    }
+                    if(showNetworkMsg){
+                        Text(
+                            text = "Network not available",
+                            fontFamily = Abel,
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                color = ErrorRed,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            ),
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(4.dp)
+                        )
+                    }
+
+                    when (loadingState) {
+                        LoadingStates.DONE -> { imagesReady = true }
+                        LoadingStates.LOADING ->{message = getString(context, R.string.loading_message)}
+                        LoadingStates.DOWNLOADING ->{message = getString(context, R.string.downloading_message)}
+                        LoadingStates.EXTRACTING ->{message = getString(context, R.string.extracting_message)}
+                        LoadingStates.ERROR_EXTRACTING ->{ message = getString(context, R.string.error_extracting_message)}
+                        LoadingStates.ERROR_DOWNLOADING ->{message = getString(context, R.string.error_downloading_message)}
+                        LoadingStates.ERROR_LOADING ->{message = getString(context, R.string.error_loading_message)}
+                        LoadingStates.NONE -> {}
+                    }
+                    if(imagesReady){
+                    MyHorizontalPager(
+                        context = context,
+                        viewModel = viewModel,
+                        pagerState = pagerState,
+                        modifier = Modifier
+                            .padding(0.dp, 24.dp)
+                            .weight(1f),
+                        numberOfImages = numberOfImages
+                    )
+                    Text(
+                        text = "Total Images: $numberOfImages",
+                        fontFamily = Russo,
+                        fontSize = 18.sp,
+                        style = TextStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 1.sp,
+                            fontWeight = FontWeight.Light,
+                        ),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .weight(0.3f)
+                    )
+                    } else {
+                        LoadingImagesMessage(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 50.dp),
+                            state = loadingState,
+                            message = message
+                        ){
+                            viewModel.getImagesBasedOnVersion()
+                        }
+                    }
                 }
-                Text(
-                    text = "Total Images: $numberOfImages",
-                    fontFamily = Russo,
-                    fontSize = 18.sp,
-                    style = TextStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.sp,
-                        fontWeight = FontWeight.Light,
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .weight(0.3f)
-                )
+
+
 
                 Box(
                     modifier = Modifier
@@ -383,7 +446,11 @@ fun HomeScreen(
                             when (state.status) {
                                 is PermissionStatus.Granted -> {
                                     Log.i("HomeScreen", "Permission granted")
-                                    startRecordScreen()
+                                    if(imagesReady && viewModel.itemList.value.isNotEmpty()){
+                                        startRecordScreen()
+                                    } else {
+                                        Toast.makeText(context, getString(context, R.string.no_images_message), Toast.LENGTH_SHORT).show()
+                                    }
                                 }
 
                                 else -> {
@@ -429,5 +496,4 @@ fun HomeScreen(
         }
     }
 }
-
 

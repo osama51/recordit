@@ -22,6 +22,7 @@ viewmodelLifeCycleCompose = "2.6.1"
 hilt = "1.1.0"
 firebaseStorageKtx = "20.3.0"
 volley = "1.2.1"
+firebaseDatabase = "20.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -63,6 +64,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
