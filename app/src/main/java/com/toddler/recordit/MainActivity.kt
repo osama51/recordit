@@ -97,11 +97,7 @@ class MainActivity : ComponentActivity() {
                 // user denied the permission and checked "never ask again"
                 Log.i("MainActivity", "requestRecordPermission: user denied the permission and checked \"never ask again\"")
             }
-            Toast.makeText(
-                this,
-                "You need to allow RecordIt to record audio to use this app",
-                Toast.LENGTH_LONG
-            ).show()
+//            Toast.makeText(this, "You need to allow RecordIt to record audio to use this app", Toast.LENGTH_LONG).show()
         }
     }
 

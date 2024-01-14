@@ -76,7 +76,7 @@ class LoginActivity : ComponentActivity() {
             finish()
             return
         } else {
-            Toast.makeText(this, "Not Signed In", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Not Signed In", Toast.LENGTH_SHORT).show()
             // request google sign in
             // startActivity(Intent(this, GoogleSignInActivity::class.java))
 

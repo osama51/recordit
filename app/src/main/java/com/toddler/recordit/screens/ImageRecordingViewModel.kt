@@ -274,8 +274,12 @@ class ImageRecordingViewModel @Inject constructor(
 
         // instead, access the directory that the system provides for my app
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+//        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
+
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+        checkAndCreateDir(uidDir)
         return Uri.parse("${uidDir}/${imageTitle.replace(" ", "_")}.wav")
 //        }
     }
@@ -287,17 +291,38 @@ class ImageRecordingViewModel @Inject constructor(
         val gson = Gson()
         val json = gson.toJson(_itemList.value)
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+//        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+        checkAndCreateDir(uidDir)
+
         val file = File(uidDir, JSON_FILE_NAME)
         file.writeText(json)
         Log.i("RecordScreen", "itemList saved to json | ${file.absolutePath}")
+    }
+
+    private fun checkAndCreateDir(dir: File) {
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                Log.d("TAG", "Subfolder created: $dir")
+            } else {
+                Log.e("TAG", "Failed to create subfolder: $dir")
+            }
+        } else {
+            Log.d("TAG", "Subfolder already exists: $dir")
+        }
     }
 
 
     fun loadItemListFromJson() {
         val gson = Gson()
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+//        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+        if(!uidDir.exists()) return
         val file = File(uidDir, JSON_FILE_NAME)
         val json = file.readText()
         val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
@@ -308,7 +333,10 @@ class ImageRecordingViewModel @Inject constructor(
 
     private fun checkIfFileExists(fileName: String): Boolean {
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
-        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+//        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
         val file = File(uidDir, fileName)
         return file.exists()
     }
@@ -506,7 +534,7 @@ class ImageRecordingViewModel @Inject constructor(
                 "RecordScreen",
                 "fetchImagesFromFirebaseCloudStorage() | images downloaded successfully"
             )
-            Toast.makeText(context, "Images downloaded successfully", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "Images downloaded successfully", Toast.LENGTH_SHORT).show()
             newZip = true
             unzipImages()
 
@@ -518,6 +546,8 @@ class ImageRecordingViewModel @Inject constructor(
             )
         }
     }
+
+    // check
 
     /**
      *
@@ -564,7 +594,7 @@ class ImageRecordingViewModel @Inject constructor(
                             File(destDir).listFiles()
                         }"
                     )
-                    Toast.makeText(context, "Images unzip complete", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(context, "Images unzip complete", Toast.LENGTH_SHORT).show()
 
                     sharedPreferences.edit().putBoolean("imagesUnzipped", true).apply()
 
@@ -580,7 +610,7 @@ class ImageRecordingViewModel @Inject constructor(
                         "RecordScreen",
                         "unzipImages() | images unzip failed: $error"
                     )
-                    Toast.makeText(context, "Images unzip failed", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(context, "Images unzip failed", Toast.LENGTH_SHORT).show()
                 }
             })
         } else {
@@ -634,14 +664,18 @@ class ImageRecordingViewModel @Inject constructor(
     // loop over the audio files in the uidDir and upload them to firebase storage
     fun uploadAudioFiles(completionListener: UploadCompletionListener? = null) {
         if(!_isUploading.value){
-            val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
-            val uidDirFile = File(uidDir)
-            val audioFiles = uidDirFile.listFiles()
+//            val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
+
+            val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+            val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+//            val uidDirFile = File(uidDir)
+            if(!uidDir.exists()) return
+            val audioFiles = uidDir.listFiles()
             var successfulUploads = 0
             _isUploading.value = true
             audioFiles?.forEach { file ->
                 val storageRef = application.storage.reference
-                val audioRef = storageRef.child("${application.firebaseAuth.currentUser?.uid}/${file.name}")
+                val audioRef = storageRef.child("records/${application.firebaseAuth.currentUser?.uid}/${file.name}")
                 audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
                     successfulUploads++
                     if (successfulUploads == _numberOfImagesRecorded.value) {
