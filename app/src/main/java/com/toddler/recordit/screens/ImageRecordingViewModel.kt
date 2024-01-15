@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.ViewModel
@@ -22,10 +21,11 @@ import com.google.gson.Gson
 import com.toddler.recordit.LoginActivity
 import com.toddler.recordit.MyApplication
 import com.toddler.recordit.R
+import com.toddler.recordit.listeners.DownloadCompletionListener
 import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.record.RecordItem
-import com.toddler.recordit.upload.UploadCompletionListener
+import com.toddler.recordit.listeners.UploadCompletionListener
 import com.toddler.recordit.utils.UnzipListener
 import com.toddler.recordit.utils.UnzipUtilsWithListeners
 import com.toddler.recordit.utils.getImagesFromFilesDir
@@ -111,7 +111,24 @@ class ImageRecordingViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             checkIfUserIsConnected()
-            getImagesBasedOnVersion()
+            checkIfUserHasAudioFiles(object : DownloadCompletionListener {
+                override fun onDownloadComplete() {
+                    Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadComplete()")
+                    getImagesBasedOnVersion()
+                }
+
+                override fun onDownloadFailed(file: File, exception: Exception) {
+                    Log.i(
+                        "RecordScreen",
+                        "checkIfUserHasAudioFiles() | onDownloadFailed() | error: $exception"
+                    )
+                    getImagesBasedOnVersion()
+                }
+
+                override fun onNoFilesToDownload() {
+                    getImagesBasedOnVersion()
+                }
+            })
         }
     }
 
@@ -355,7 +372,6 @@ class ImageRecordingViewModel @Inject constructor(
                 compareAndMergeItemList()
                 newZip = false
             }
-
         } else {
             createItemList()
         }
@@ -547,7 +563,57 @@ class ImageRecordingViewModel @Inject constructor(
         }
     }
 
-    // check
+    // check if cloud storage has audio files for the current user
+    private fun checkIfUserHasAudioFiles(completionListener: DownloadCompletionListener? = null): Boolean {
+        val storageRef = application.storage.reference
+        val recordsRef = storageRef.child("records/${application.firebaseAuth.currentUser?.uid}")
+        var hasAudioFiles = false
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+        checkAndCreateDir(uidDir)
+        recordsRef.listAll().addOnSuccessListener { listResult ->
+            hasAudioFiles = listResult.items.isNotEmpty()
+            if(!hasAudioFiles){ completionListener?.onNoFilesToDownload() }
+            val numberOfFiles = listResult.items.size
+            var numberOfFilesDownloaded = 0
+            listResult.items.forEach { item ->
+                // check if the record already exists in the local storage and if not, download listResult
+                if (!checkIfFileExists(item.name)) {
+                    val localFile = File(uidDir, item.name)
+                    item.getFile(localFile).addOnSuccessListener {
+                        numberOfFilesDownloaded++
+                        if (numberOfFilesDownloaded == numberOfFiles) {
+                            completionListener?.onDownloadComplete()
+                        }
+                        Log.i(
+                            "RecordScreen",
+                            "checkIfUserHasAudioFiles() | ${item.name} downloaded successfully"
+                        )
+                    }.addOnFailureListener {
+                        numberOfFilesDownloaded++
+                        Log.i(
+                            "RecordScreen",
+                            "checkIfUserHasAudioFiles() | ${item.name} download failed | error: $it"
+                        )
+                    }
+                } else {
+                    Log.i(
+                        "RecordScreen",
+                        "checkIfUserHasAudioFiles() | ${item.name} already exists"
+                    )
+                }
+            }
+
+
+            Log.i("RecordScreen", "checkIfUserHasAudioFiles() | hasAudioFiles: $hasAudioFiles")
+        }.addOnFailureListener {
+            completionListener?.onDownloadFailed(File(uidDir, "default"), it)
+            Log.i("RecordScreen", "checkIfUserHasAudioFiles() | error: $it")
+        }
+        return hasAudioFiles
+    }
+
+
 
     /**
      *

@@ -13,15 +13,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
-import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -79,7 +75,7 @@ import com.toddler.recordit.ui.theme.ErrorRed
 import com.toddler.recordit.ui.theme.Gray
 import com.toddler.recordit.ui.theme.OffWhite
 import com.toddler.recordit.ui.theme.Russo
-import com.toddler.recordit.upload.UploadCompletionListener
+import com.toddler.recordit.listeners.UploadCompletionListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
