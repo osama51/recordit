@@ -102,7 +102,10 @@ fun HomeScreen(
     val googleUserName = application.firebaseAuth.currentUser?.displayName
 
     val numberOfImages = viewModel.numberOfImages.collectAsState().value
+//    val numberOfImages = viewModel.itemList.collectAsState().value.size
+
     val numberOfImagesNotRecorded = viewModel.numberOfImagesNotRecorded.collectAsState().value
+//    val numberOfImagesNotRecorded = viewModel.itemList.collectAsState().value.filter { !it.recorded }.size
 
     val loadingState = viewModel.loadingState.collectAsState().value
     val connected = viewModel.connected.collectAsState().value
@@ -134,7 +137,15 @@ fun HomeScreen(
             SnackbarHost(hostState = snackbarHostState)
         },
     ) {
-        viewModel.determineNumberOfImagesNotRecorded()
+//        viewModel.determineNumberOfImagesNotRecorded()
+
+        LaunchedEffect(viewModel.itemList) {
+                viewModel.itemList.collect(){
+                    viewModel.determineNumberOfImages()
+                    viewModel.determineNumberOfImagesRecorded()
+                    viewModel.determineNumberOfImagesNotRecorded()
+                }
+            }
 
         val pagerState = rememberPagerState(
             initialPage = 0,
@@ -378,28 +389,28 @@ fun HomeScreen(
                         LoadingStates.NONE -> {}
                     }
                     if(imagesReady){
-                    MyHorizontalPager(
-                        context = context,
-                        viewModel = viewModel,
-                        pagerState = pagerState,
-                        modifier = Modifier
-                            .padding(0.dp, 24.dp)
-                            .weight(1f),
-                        numberOfImages = numberOfImages
-                    )
-                    Text(
-                        text = "Total Images: $numberOfImages",
-                        fontFamily = Russo,
-                        fontSize = 18.sp,
-                        style = TextStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 1.sp,
-                            fontWeight = FontWeight.Light,
-                        ),
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .weight(0.3f)
-                    )
+                        MyHorizontalPager(
+                            context = context,
+                            viewModel = viewModel,
+                            pagerState = pagerState,
+                            modifier = Modifier
+                                .padding(0.dp, 24.dp)
+                                .weight(1f),
+                            numberOfImages = numberOfImages
+                        )
+                        Text(
+                            text = "Total Images: $numberOfImages",
+                            fontFamily = Russo,
+                            fontSize = 18.sp,
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                letterSpacing = 1.sp,
+                                fontWeight = FontWeight.Light,
+                            ),
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .weight(0.3f)
+                        )
                     } else {
                         LoadingImagesMessage(
                             modifier = Modifier
@@ -408,7 +419,9 @@ fun HomeScreen(
                             state = loadingState,
                             message = message
                         ){
-                            viewModel.getImagesBasedOnVersion()
+                            coroutineScope.launch {
+                                viewModel.getImagesBasedOnVersion()
+                            }
                         }
                     }
                 }

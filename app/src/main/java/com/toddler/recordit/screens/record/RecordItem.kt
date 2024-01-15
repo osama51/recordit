@@ -4,6 +4,7 @@ import androidx.compose.runtime.saveable.Saver
 
 data class RecordItem(
     val id: Int,
+    val fileName: String,
     val title: String,
     val description: String,
     val imagePath: String,
@@ -16,6 +17,7 @@ val RecordItemSaver = Saver<RecordItem, Map<String, Any?>> (
     save = {
         mapOf(
             "id" to it.id,
+            "fileName" to it.fileName,
             "title" to it.title,
             "description" to it.description,
             "imagePath" to it.imagePath, // Save the image path
@@ -25,6 +27,7 @@ val RecordItemSaver = Saver<RecordItem, Map<String, Any?>> (
     restore = {
         RecordItem(
             id = it["id"] as Int,
+            fileName = it["fileName"] as String,
             title = it["title"] as String,
             description = it["description"] as String,
             imagePath = it["imagePath"] as String, // Restore image path

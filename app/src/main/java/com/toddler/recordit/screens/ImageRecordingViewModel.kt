@@ -17,6 +17,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.StorageReference
 import com.google.gson.Gson
 import com.toddler.recordit.LoginActivity
 import com.toddler.recordit.MyApplication
@@ -110,30 +111,44 @@ class ImageRecordingViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+
             checkIfUserIsConnected()
-            checkIfUserHasAudioFiles(object : DownloadCompletionListener {
-                override fun onDownloadComplete() {
-                    Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadComplete()")
-                    getImagesBasedOnVersion()
-                }
+            /**
+             * useless use of async and await, since the firebase functions have their own coroutines
+             *
+             * */
+//            async { getImagesBasedOnVersion() }.await()
 
-                override fun onDownloadFailed(file: File, exception: Exception) {
-                    Log.i(
-                        "RecordScreen",
-                        "checkIfUserHasAudioFiles() | onDownloadFailed() | error: $exception"
-                    )
-                    getImagesBasedOnVersion()
-                }
+            try {
+                /**
+                 * still useless for the same reason, but I'll keep it for now
+                 *
+                 * */
+                getImagesBasedOnVersion()
 
-                override fun onNoFilesToDownload() {
-                    getImagesBasedOnVersion()
-                }
-            })
+            } finally {
+                checkIfUserHasAudioFiles(object : DownloadCompletionListener {
+                    override fun onDownloadComplete() {
+                        updateItemListJson()
+                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadComplete()")
+                    }
+
+                    override fun onDownloadFailed(file: File, exception: Exception) {
+                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadFailed() | error: $exception")
+                        updateItemListJson()
+                    }
+
+                    override fun onNoFilesToDownload() {
+                        updateItemListJson()
+                    }
+                })
+            }
         }
+
     }
 
     private fun updateCurrentItem() {
-        if(_itemList.value.isEmpty()) return
+        if (_itemList.value.isEmpty()) return
         // set current item as first item not recorded
         _currentItem.value = _itemList.value.firstOrNull { !it.recorded } ?: _itemList.value.last()
         _currentItemIndex.value = _itemList.value.indexOf(_currentItem.value)
@@ -186,6 +201,9 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
 
+    fun determineNumberOfImages() {
+        _numberOfImages.value = _itemList.value.size
+    }
     fun determineNumberOfImagesRecorded() {
         _numberOfImagesRecorded.value = _itemList.value.filter { it.recorded }.size
         Log.i(
@@ -274,15 +292,13 @@ class ImageRecordingViewModel @Inject constructor(
 
     fun returnFile(): File {
         var file: File? = null
-        returnUri(_currentItem.value!!.title).path?.let {
-            File(
-                it
-            )
+        returnUri(_currentItem.value!!.fileName).path?.let {
+            File(it)
         }?.let { file = it }
         return file!!
     }
 
-    private fun returnUri(imageTitle: String): Uri {
+    private fun returnUri(fileName: String): Uri {
 //        viewModelScope.launch{
 //        val pathConfig = pathConfig(suffix = imageTitle.replace(" ", "_"))
 //        // set the Uri of the file from the csvConfig hostPath and fileName
@@ -297,7 +313,7 @@ class ImageRecordingViewModel @Inject constructor(
         val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
         val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
         checkAndCreateDir(uidDir)
-        return Uri.parse("${uidDir}/${imageTitle.replace(" ", "_")}.wav")
+        return Uri.parse("${uidDir}/${fileName}.wav")
 //        }
     }
 
@@ -310,6 +326,7 @@ class ImageRecordingViewModel @Inject constructor(
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
 //        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
+        Log.i("RecordScreen", "saveItemListToJson() called | ${_itemList.value}")
         val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
         val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
         checkAndCreateDir(uidDir)
@@ -322,30 +339,30 @@ class ImageRecordingViewModel @Inject constructor(
     private fun checkAndCreateDir(dir: File) {
         if (!dir.exists()) {
             if (dir.mkdir()) {
-                Log.d("TAG", "Subfolder created: $dir")
+                Log.d("checkAndCreateDir", "Subfolder created: $dir")
             } else {
-                Log.e("TAG", "Failed to create subfolder: $dir")
+                Log.e("checkAndCreateDir", "Failed to create subfolder: $dir")
             }
         } else {
-            Log.d("TAG", "Subfolder already exists: $dir")
+            Log.d("checkAndCreateDir", "Subfolder already exists: $dir")
         }
     }
 
 
-    fun loadItemListFromJson() {
+    private fun loadItemListFromJson(jsonFileName: String): List<RecordItem> {
         val gson = Gson()
 //        val uidDir = "${context.filesDir}/${application.firebaseAuth.currentUser?.uid ?: "default"}"
 //        val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
         val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
         val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
-        if(!uidDir.exists()) return
-        val file = File(uidDir, JSON_FILE_NAME)
+        if (!uidDir.exists()) return _itemList.value
+        val file = File(uidDir, jsonFileName)
         val json = file.readText()
         val itemListFromJson = gson.fromJson(json, Array<RecordItem>::class.java).toList()
         Log.i("RecordScreen", "itemList loaded from json | ${file.absolutePath}")
 //        Log.i("RecordScreen", "itemList loaded from json | ${itemListFromJson}")
-        _itemList.value = itemListFromJson
+        return itemListFromJson
     }
 
     private fun checkIfFileExists(fileName: String): Boolean {
@@ -367,8 +384,9 @@ class ImageRecordingViewModel @Inject constructor(
 
     private fun initializeItemList() {
         if (checkIfFileExists(JSON_FILE_NAME)) {
-            loadItemListFromJson()
+            _itemList.value = loadItemListFromJson(JSON_FILE_NAME)
             if (newZip) {
+                Log.i("RecordScreen", "initializeItemList() | newZip and will compare and merge")
                 compareAndMergeItemList()
                 newZip = false
             }
@@ -379,11 +397,12 @@ class ImageRecordingViewModel @Inject constructor(
 
     private fun createItemList() {
         _itemList.value = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
-            var imageName = imageMap.entries.first().key
-            imageName = imageName.capitalizeWords() // no need to drop the extension anymore, since I'm passing file name without extension
+            val fileName = imageMap.entries.first().key
+            val imageName = fileName.capitalizeWords() // no need to drop the extension anymore, since I'm passing file name without extension
             Log.i("RecordScreen", "itemList re-occupied !!")
             RecordItem(
                 id = index,
+                fileName = fileName,
                 title = imageName, //imageMap.toString().substring(7),
                 description = "Description ${imageName}",
                 imagePath = imageMap.entries.first().value,
@@ -402,18 +421,19 @@ class ImageRecordingViewModel @Inject constructor(
      * */
     private fun compareAndMergeItemList() {
         val newImages = getImagesFromFilesDir(context = context).mapIndexed { index, imageMap ->
-            var imageName = imageMap.entries.first().key
-            imageName = imageName.capitalizeWords()
+            val fileName = imageMap.entries.first().key
+            val imageName = fileName.capitalizeWords()
 
             // check if the image already exists in the itemList by its title
-            val imageExists = _itemList.value.any { it.title == imageName }
+            val imageExists = _itemList.value.any { it.fileName == fileName }
             Log.i("RecordScreen", "newList occupied~!")
             RecordItem(
                 id = index,
+                fileName = fileName,
                 title = imageName, //imageMap.toString().substring(7),
                 description = "Description ${imageName}",
                 imagePath = imageMap.entries.first().value,
-                recorded = if (imageExists) _itemList.value.first { it.title == imageName }.recorded else false
+                recorded = if (imageExists) _itemList.value.first { it.fileName == fileName }.recorded else false
             )
 
         }
@@ -436,9 +456,13 @@ class ImageRecordingViewModel @Inject constructor(
             }
         }
         _itemList.value = updatedItemList
+//        viewModelScope.launch {
+//            // emit the changes in the _itemList
+//            _itemList.emit(updatedItemList)
+//        }
         Log.i("RecordScreen", "itemList updated !!")
-        determineNumberOfImagesRecorded()
-        determineNumberOfImagesNotRecorded()
+//        determineNumberOfImagesRecorded()
+//        determineNumberOfImagesNotRecorded()
     }
 
     // check internet connection
@@ -472,24 +496,25 @@ class ImageRecordingViewModel @Inject constructor(
      *
      */
 
-    private fun setActiveListener(){
+    private fun setActiveListener() {
         val connectedRef = application.database.getReference("connect")
-        connectedRef.addValueEventListener(object : ValueEventListener{
+        connectedRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
             }
+
             override fun onCancelled(error: DatabaseError) {
             }
         })
         connectedRef.keepSynced(true)
     }
 
-    fun getImagesBasedOnVersion(): Int{
+    fun getImagesBasedOnVersion(): Int {
         val storageRef = application.storage.reference
         val imagesVerRef = storageRef.child("images/version.txt")
         val localVerFile = File(context.filesDir, "version.txt")
         var version = sharedPreferences.getInt("imagesVersion", -1)
 
-        if(application.checkInternetConnection() && _connected.value){
+        if (application.checkInternetConnection() && _connected.value) {
             Log.i("RecordScreen", "getImagesBasedOnVersion() | internet connection available")
         } else {
             Log.i("RecordScreen", "getImagesBasedOnVersion() | no internet connection")
@@ -513,7 +538,8 @@ class ImageRecordingViewModel @Inject constructor(
             }
 
         }.addOnFailureListener {
-            prepareToDisplay()
+            unzipImages()
+//            prepareToDisplay()
             Log.i(
                 "RecordScreen",
                 "getImagesBasedOnVersion() | version download failed | error: $it"
@@ -522,7 +548,7 @@ class ImageRecordingViewModel @Inject constructor(
         return version
     }
 
-    private fun extractVersionFromTextFile(file: File): Int{
+    private fun extractVersionFromTextFile(file: File): Int {
         var version = 0
         try {
             val fileText = file.readText()
@@ -574,7 +600,7 @@ class ImageRecordingViewModel @Inject constructor(
         recordsRef.listAll().addOnSuccessListener { listResult ->
             hasAudioFiles = listResult.items.isNotEmpty()
             val numberOfFiles = listResult.items.size
-            if(!hasAudioFiles){ completionListener?.onNoFilesToDownload() }
+            if (!hasAudioFiles) { completionListener?.onNoFilesToDownload() }
             var numberOfFilesDownloaded = 0
             var numberOfFilesFailed = 0
             var numberOfFilesSkipped = 0
@@ -583,36 +609,100 @@ class ImageRecordingViewModel @Inject constructor(
                 if (!checkIfFileExists(item.name)) {
                     val localFile = File(uidDir, item.name)
                     item.getFile(localFile).addOnSuccessListener {
-                        numberOfFilesDownloaded++
-                        if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
-                            completionListener?.onDownloadComplete()
-                        }
                         Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} downloaded successfully")
-                    }.addOnFailureListener {
-                        numberOfFilesFailed++
-                        if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
+                        numberOfFilesDownloaded++
+                        if ((numberOfFilesDownloaded + numberOfFilesFailed + numberOfFilesSkipped) == numberOfFiles) {
                             completionListener?.onDownloadComplete()
                         }
+                    }.addOnFailureListener {
                         Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} download failed | error: $it")
+                        numberOfFilesFailed++
+                        if ((numberOfFilesDownloaded + numberOfFilesFailed + numberOfFilesSkipped) == numberOfFiles) {
+                            completionListener?.onDownloadFailed(localFile, it)
+                        }
                     }
                 } else {
+//                    // check if the file is itemList.json
+//                    if (item.name == JSON_FILE_NAME) {
+//                        val cloudFile = File(uidDir, CLOUD_JSON_FILE_NAME)
+//                        val localFile = File(uidDir, JSON_FILE_NAME)
+//                        item.getFile(cloudFile).addOnSuccessListener {
+//                            compareTwoItemListJsonFiles(item, localFile, cloudFile, completionListener)
+//                        }.addOnFailureListener {
+//                            Log.e("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} download failed | error: $it")
+//                        }
+//                    }
+//
+//
+                    Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} already exists")
                     numberOfFilesSkipped++
-                    if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
+                    if ((numberOfFilesDownloaded + numberOfFilesFailed + numberOfFilesSkipped) == numberOfFiles) {
                         completionListener?.onDownloadComplete()
                     }
-                    Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} already exists")
                 }
             }
 
 
             Log.i("RecordScreen", "checkIfUserHasAudioFiles() | hasAudioFiles: $hasAudioFiles")
         }.addOnFailureListener {
-            completionListener?.onDownloadFailed(File(uidDir, "default"), it)
             Log.i("RecordScreen", "checkIfUserHasAudioFiles() | error: $it")
+            completionListener?.onDownloadFailed(uidDir, it)
         }
         return hasAudioFiles
     }
 
+    // update the itemList.json file based on the existing records in the uidDir
+    private fun updateItemListJson() {
+        Log.i("RecordScreen", "updateItemListJson() | called")
+        val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
+        val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
+        checkAndCreateDir(uidDir)
+
+        val listOfRecords = uidDir.listFiles()
+//        listOfRecords?.forEach {
+//            val updatedItemList = _itemList.value.map { item ->
+////                Log.i("RecordScreen", "updateItemListJson() | item.title: ${item.title}")
+////                Log.i("RecordScreen", "updateItemListJson() | it.title: ${it.nameWithoutExtension}")
+//                if (it.nameWithoutExtension == item.title) {
+//                    item.copy(recorded = true)
+//                } else {
+//                    item
+//                }
+//            }
+//            _itemList.value = updatedItemList
+//            saveItemListToJson()
+//        }
+
+
+        listOfRecords?.let {
+            val updatedItemList = _itemList.value.map { item ->
+                if (listOfRecords.any {
+                        Log.i("RecordScreen", "updateItemListJson() | item.fileName: ${item.fileName}")
+                        Log.i("RecordScreen", "updateItemListJson() | it.fileName: ${it.nameWithoutExtension}")
+                    it.nameWithoutExtension == item.fileName }) {
+                    item.copy(recorded = true)
+                } else {
+                    item
+                }
+            }
+            _itemList.value = updatedItemList
+            saveItemListToJson()
+        }
+    }
+
+
+    // function to compare the old itemList.json with the new one from cloud storage,
+    // I might not need it though if I went with updating the itemList.json based on
+    // the records existing, it will be cleaner that way. we'll see.
+    private fun compareTwoItemListJsonFiles(
+        item: StorageReference,
+        localFile: File,
+        cloudFile: File,
+        completionListener: DownloadCompletionListener?
+    ) {
+        val localItemList = loadItemListFromJson(JSON_FILE_NAME)
+
+    }
 
 
     /**
@@ -694,16 +784,28 @@ class ImageRecordingViewModel @Inject constructor(
                 val bmp = BitmapFactory.decodeFile(file.absolutePath)
                 FileOutputStream(file).use { out ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        bmp.compress(Bitmap.CompressFormat.WEBP_LOSSLESS,50,out) // or WEBP_LOSSY
+                        bmp.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 50, out) // or WEBP_LOSSY
                         out.close()
-                        Log.i("RecordScreen", "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb")
-                        Log.i("RecordScreen", "convertImagesToWebP() | ${out} size: ${out.channel.size() / 1024} kb")
+                        Log.i(
+                            "RecordScreen",
+                            "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb"
+                        )
+                        Log.i(
+                            "RecordScreen",
+                            "convertImagesToWebP() | ${out} size: ${out.channel.size() / 1024} kb"
+                        )
 
                     } else {
-                        bmp.compress(Bitmap.CompressFormat.WEBP,50,out)
+                        bmp.compress(Bitmap.CompressFormat.WEBP, 50, out)
                         out.close() // close the stream to ensure that the file is written?
-                        Log.i("RecordScreen", "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb")
-                        Log.i("RecordScreen", "convertImagesToWebP() | ${out.fd} size: ${out.channel.size() / 1024} kb")
+                        Log.i(
+                            "RecordScreen",
+                            "convertImagesToWebP() | ${file.name} size: ${file.length() / 1024} kb"
+                        )
+                        Log.i(
+                            "RecordScreen",
+                            "convertImagesToWebP() | ${out.fd} size: ${out.channel.size() / 1024} kb"
+                        )
                     }
                 }
             }
@@ -719,29 +821,31 @@ class ImageRecordingViewModel @Inject constructor(
     private fun prepareToDisplay() {
         _loadingState.value = LoadingStates.LOADING
         initializeItemList()
+        updateItemListJson()
 
-        _numberOfImages.value = itemList.value.size
-        determineNumberOfImagesRecorded()
-        determineNumberOfImagesNotRecorded()
+//        _numberOfImages.value = itemList.value.size
+//        determineNumberOfImagesRecorded()
+//        determineNumberOfImagesNotRecorded()
 
         updateCurrentItem()
     }
 
     // loop over the audio files in the uidDir and upload them to firebase storage
     fun uploadAudioFiles(completionListener: UploadCompletionListener? = null) {
-        if(!_isUploading.value){
+        if (!_isUploading.value) {
 //            val uidDir = context.getDir(application.firebaseAuth.currentUser?.uid ?: "default", MODE_PRIVATE).absolutePath
 
             val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
             val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
 //            val uidDirFile = File(uidDir)
-            if(!uidDir.exists()) return
+            if (!uidDir.exists()) return
             val audioFiles = uidDir.listFiles()
             var successfulUploads = 0
             _isUploading.value = true
             audioFiles?.forEach { file ->
                 val storageRef = application.storage.reference
-                val audioRef = storageRef.child("records/${application.firebaseAuth.currentUser?.uid}/${file.name}")
+                val audioRef =
+                    storageRef.child("records/${application.firebaseAuth.currentUser?.uid}/${file.name}")
                 audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
                     successfulUploads++
                     if (successfulUploads == _numberOfImagesRecorded.value) {
@@ -751,7 +855,10 @@ class ImageRecordingViewModel @Inject constructor(
                     Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
                 }.addOnFailureListener {
                     _isUploading.value = false
-                    Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} upload failed | error: $it")
+                    Log.i(
+                        "RecordScreen",
+                        "uploadAudioFiles() | ${file.name} upload failed | error: $it"
+                    )
                 }
             }
         }
@@ -771,7 +878,7 @@ class ImageRecordingViewModel @Inject constructor(
 
 
     // function to take a string, replace underscores with spaces, and capitalize each word
-    private fun String.capitalizeWords(): String = split("_").joinToString(" ") {
+    private fun String.capitalizeWords(): String = split("_", " ").joinToString(" ") {
         it.replaceFirstChar { firstChar ->
             if (firstChar.isLowerCase()) firstChar.titlecase(
                 Locale.ROOT
@@ -782,6 +889,7 @@ class ImageRecordingViewModel @Inject constructor(
 
     companion object {
         const val JSON_FILE_NAME = "itemList.json"
+        const val CLOUD_JSON_FILE_NAME = "cloudItemList.json"
     }
 
 }
