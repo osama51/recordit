@@ -573,34 +573,34 @@ class ImageRecordingViewModel @Inject constructor(
         checkAndCreateDir(uidDir)
         recordsRef.listAll().addOnSuccessListener { listResult ->
             hasAudioFiles = listResult.items.isNotEmpty()
-            if(!hasAudioFiles){ completionListener?.onNoFilesToDownload() }
             val numberOfFiles = listResult.items.size
+            if(!hasAudioFiles){ completionListener?.onNoFilesToDownload() }
             var numberOfFilesDownloaded = 0
+            var numberOfFilesFailed = 0
+            var numberOfFilesSkipped = 0
             listResult.items.forEach { item ->
                 // check if the record already exists in the local storage and if not, download listResult
                 if (!checkIfFileExists(item.name)) {
                     val localFile = File(uidDir, item.name)
                     item.getFile(localFile).addOnSuccessListener {
                         numberOfFilesDownloaded++
-                        if (numberOfFilesDownloaded == numberOfFiles) {
+                        if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
                             completionListener?.onDownloadComplete()
                         }
-                        Log.i(
-                            "RecordScreen",
-                            "checkIfUserHasAudioFiles() | ${item.name} downloaded successfully"
-                        )
+                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} downloaded successfully")
                     }.addOnFailureListener {
-                        numberOfFilesDownloaded++
-                        Log.i(
-                            "RecordScreen",
-                            "checkIfUserHasAudioFiles() | ${item.name} download failed | error: $it"
-                        )
+                        numberOfFilesFailed++
+                        if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
+                            completionListener?.onDownloadComplete()
+                        }
+                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} download failed | error: $it")
                     }
                 } else {
-                    Log.i(
-                        "RecordScreen",
-                        "checkIfUserHasAudioFiles() | ${item.name} already exists"
-                    )
+                    numberOfFilesSkipped++
+                    if ((numberOfFilesDownloaded+numberOfFilesFailed+numberOfFilesSkipped) == numberOfFiles) {
+                        completionListener?.onDownloadComplete()
+                    }
+                    Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} already exists")
                 }
             }
 
