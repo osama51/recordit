@@ -341,10 +341,10 @@ class ImageRecordingViewModel @Inject constructor(
             if (dir.mkdir()) {
                 Log.d("checkAndCreateDir", "Subfolder created: $dir")
             } else {
-                Log.e("checkAndCreateDir", "Failed to create subfolder: $dir")
+//                Log.e("checkAndCreateDir", "Failed to create subfolder: $dir")
             }
         } else {
-            Log.d("checkAndCreateDir", "Subfolder already exists: $dir")
+//            Log.d("checkAndCreateDir", "Subfolder already exists: $dir")
         }
     }
 
@@ -659,6 +659,7 @@ class ImageRecordingViewModel @Inject constructor(
         checkAndCreateDir(uidDir)
 
         val listOfRecords = uidDir.listFiles()
+
 //        listOfRecords?.forEach {
 //            val updatedItemList = _itemList.value.map { item ->
 ////                Log.i("RecordScreen", "updateItemListJson() | item.title: ${item.title}")
@@ -673,12 +674,11 @@ class ImageRecordingViewModel @Inject constructor(
 //            saveItemListToJson()
 //        }
 
-
         listOfRecords?.let {
             val updatedItemList = _itemList.value.map { item ->
                 if (listOfRecords.any {
-                        Log.i("RecordScreen", "updateItemListJson() | item.fileName: ${item.fileName}")
-                        Log.i("RecordScreen", "updateItemListJson() | it.fileName: ${it.nameWithoutExtension}")
+//                        Log.i("RecordScreen", "updateItemListJson() | item.fileName: ${item.fileName}")
+//                        Log.i("RecordScreen", "updateItemListJson() | it.fileName: ${it.nameWithoutExtension}")
                     it.nameWithoutExtension == item.fileName }) {
                     item.copy(recorded = true)
                 } else {
