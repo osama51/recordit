@@ -18,6 +18,8 @@ val ErrorRed = Color(0xFFB87171)
 
 val DarkRed = Color(0xFF862415)
 
+val DarkGreen = Color(0xFF5AAC5E)
+
 val selectedColor = Color(0xFFA8A8A8)
 val unselectedColor = Color(0xFFFFFFFF)
 

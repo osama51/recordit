@@ -6,6 +6,7 @@ enum class LoadingStates {
     EXTRACTING,
     LOADING,
     DONE,
+    NO_NETWORK,
     ERROR_DOWNLOADING,
     ERROR_EXTRACTING,
     ERROR_LOADING

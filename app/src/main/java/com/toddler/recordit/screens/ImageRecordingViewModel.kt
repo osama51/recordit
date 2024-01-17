@@ -39,6 +39,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 
 @HiltViewModel
@@ -98,6 +99,12 @@ class ImageRecordingViewModel @Inject constructor(
 
     private val _isUploading = MutableStateFlow(false)
     val isUploading: StateFlow<Boolean> = _isUploading
+
+    private val _downloadProgress = MutableStateFlow(0)
+    val downloadProgress: StateFlow<Int> = _downloadProgress
+
+    private val _uploadProgress = MutableStateFlow(0)
+    val uploadProgress: StateFlow<Int> = _uploadProgress
 
     private val _loadingState = MutableStateFlow<LoadingStates>(LoadingStates.NONE)
     val loadingState: StateFlow<LoadingStates> = _loadingState
@@ -579,12 +586,26 @@ class ImageRecordingViewModel @Inject constructor(
 //            Toast.makeText(context, "Images downloaded successfully", Toast.LENGTH_SHORT).show()
             newZip = true
             unzipImages()
+            _downloadProgress.value = 0
 
         }.addOnFailureListener {
             _loadingState.value = LoadingStates.ERROR_DOWNLOADING
+            _downloadProgress.value = 0
             Log.i(
                 "RecordScreen",
                 "fetchImagesFromFirebaseCloudStorage() | images download failed | error: $it"
+            )
+        }.addOnProgressListener {
+            _downloadProgress.value = ((100.0 * it.bytesTransferred) / it.totalByteCount).roundToInt()
+//            Log.i(
+//                "RecordScreen",
+//                "fetchImagesFromFirebaseCloudStorage() | progress: $progress"
+//            )
+        }.snapshot.task.addOnCompleteListener {
+            _downloadProgress.value = 0
+            Log.i(
+                "RecordScreen",
+                "fetchImagesFromFirebaseCloudStorage() | task completed"
             )
         }
     }
@@ -606,7 +627,7 @@ class ImageRecordingViewModel @Inject constructor(
             var numberOfFilesSkipped = 0
             listResult.items.forEach { item ->
                 // check if the record already exists in the local storage and if not, download listResult
-                if (!checkIfFileExists(item.name)) {
+                if (!checkIfFileExists(item.name) && item.name != "$JSON_FILE_NAME.json") {
                     val localFile = File(uidDir, item.name)
                     item.getFile(localFile).addOnSuccessListener {
                         Log.i("RecordScreen", "checkIfUserHasAudioFiles() | ${item.name} downloaded successfully")
@@ -819,7 +840,7 @@ class ImageRecordingViewModel @Inject constructor(
     }
 
     private fun prepareToDisplay() {
-        _loadingState.value = LoadingStates.LOADING
+//        _loadingState.value = LoadingStates.LOADING
         initializeItemList()
         updateItemListJson()
 
@@ -848,13 +869,16 @@ class ImageRecordingViewModel @Inject constructor(
                     storageRef.child("records/${application.firebaseAuth.currentUser?.uid}/${file.name}")
                 audioRef.putFile(Uri.fromFile(file)).addOnSuccessListener {
                     successfulUploads++
+                    _uploadProgress.value++
                     if (successfulUploads == _numberOfImagesRecorded.value) {
                         _isUploading.value = false
+                        _uploadProgress.value = 0
                         completionListener?.onUploadComplete()
                     }
                     Log.i("RecordScreen", "uploadAudioFiles() | ${file.name} uploaded successfully")
                 }.addOnFailureListener {
                     _isUploading.value = false
+                    _uploadProgress.value = 0
                     Log.i(
                         "RecordScreen",
                         "uploadAudioFiles() | ${file.name} upload failed | error: $it"

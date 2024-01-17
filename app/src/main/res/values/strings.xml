@@ -8,7 +8,7 @@
 <!--    No, no just kidding, it's not a secret, it's just an identifier for the app. so who cares.-->
     <string name="start_record_screen">Get Started</string>
 
-    <string name="downloading_message">Downloading images…</string>
+    <string name="downloading_message">Downloading images</string>
     <string name="extracting_message">Preparing images…</string>
     <string name="loading_message">Loading images…</string>
     <string name="error_downloading_message">Error downloading images</string>

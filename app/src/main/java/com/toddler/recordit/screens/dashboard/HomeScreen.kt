@@ -184,7 +184,7 @@ fun HomeScreen(
                         NavigationDrawerItem(
                             label = {
                                 Text(
-                                    text = "Upload my records",
+                                    text =if (uploading) {"Uploading  " + "${viewModel.uploadProgress.collectAsState().value}/${viewModel.numberOfImagesRecorded.collectAsState().value}"} else "Upload my records",
                                     fontFamily = Abel, fontSize = 24.sp
                                 )
                             },
@@ -360,8 +360,12 @@ fun HomeScreen(
                 ) {
                     // make sure it is the same value for one second
                     LaunchedEffect(connected) {
-                        delay(1000)
-                        showNetworkMsg = !connected
+                        showNetworkMsg = if(!connected){
+                            delay(1000)
+                            true
+                        } else{
+                            false
+                        }
                     }
                     if(showNetworkMsg){
                         Text(
@@ -381,12 +385,13 @@ fun HomeScreen(
                     when (loadingState) {
                         LoadingStates.DONE -> { imagesReady = true }
                         LoadingStates.LOADING ->{message = getString(context, R.string.loading_message)}
-                        LoadingStates.DOWNLOADING ->{message = getString(context, R.string.downloading_message)}
+                        LoadingStates.DOWNLOADING ->{message = getString(context, R.string.downloading_message) + "  "+ "${viewModel.downloadProgress.collectAsState().value}%"}
                         LoadingStates.EXTRACTING ->{message = getString(context, R.string.extracting_message)}
                         LoadingStates.ERROR_EXTRACTING ->{ message = getString(context, R.string.error_extracting_message)}
                         LoadingStates.ERROR_DOWNLOADING ->{message = getString(context, R.string.error_downloading_message)}
                         LoadingStates.ERROR_LOADING ->{message = getString(context, R.string.error_loading_message)}
                         LoadingStates.NONE -> {}
+                        LoadingStates.NO_NETWORK -> {}
                     }
                     if(imagesReady){
                         MyHorizontalPager(
