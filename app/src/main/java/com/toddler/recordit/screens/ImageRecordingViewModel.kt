@@ -1,6 +1,7 @@
 package com.toddler.recordit.screens
 
 import android.Manifest
+import android.app.Application
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.graphics.Bitmap
@@ -10,6 +11,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -27,6 +29,7 @@ import com.toddler.recordit.playback.AndroidAudioPlayer
 import com.toddler.recordit.recorder.AndroidAudioRecorder
 import com.toddler.recordit.screens.record.RecordItem
 import com.toddler.recordit.listeners.UploadCompletionListener
+import com.toddler.recordit.utils.ConnectionLiveData
 import com.toddler.recordit.utils.UnzipListener
 import com.toddler.recordit.utils.UnzipUtilsWithListeners
 import com.toddler.recordit.utils.getImagesFromFilesDir
@@ -47,8 +50,14 @@ class ImageRecordingViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
+    /**
+     * I should use AndroidViewModel instead of ViewModel, since it provides a reference to the application context.
+     * ( the only difference between the two is that AndroidViewModel has a reference to the application context)
+     * Notice, Google doesn't recomment using AndroidViewModel or using Application in viewModel in general,
+     *
+     * */
 
-    val applicationContext = context
+    val applicationContext: Context = context
 
     val application = applicationContext as MyApplication
 
@@ -112,6 +121,9 @@ class ImageRecordingViewModel @Inject constructor(
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected
 
+    val connectionLiveData = ConnectionLiveData(context)
+
+
     var checkedNetwork = false
 
     // State flows and other properties remain the same
@@ -119,37 +131,16 @@ class ImageRecordingViewModel @Inject constructor(
     init {
         viewModelScope.launch {
 
-            checkIfUserIsConnected()
+//            checkIfUserIsConnected()
             /**
              * useless use of async and await, since the firebase functions have their own coroutines
              *
              * */
 //            async { getImagesBasedOnVersion() }.await()
 
-            try {
-                /**
-                 * still useless for the same reason, but I'll keep it for now
-                 *
-                 * */
-                getImagesBasedOnVersion()
+            getImagesBasedOnVersion()
 
-            } finally {
-                checkIfUserHasAudioFiles(object : DownloadCompletionListener {
-                    override fun onDownloadComplete() {
-                        updateItemListJson()
-                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadComplete()")
-                    }
 
-                    override fun onDownloadFailed(file: File, exception: Exception) {
-                        Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadFailed() | error: $exception")
-                        updateItemListJson()
-                    }
-
-                    override fun onNoFilesToDownload() {
-                        updateItemListJson()
-                    }
-                })
-            }
         }
 
     }
@@ -472,13 +463,9 @@ class ImageRecordingViewModel @Inject constructor(
 //        determineNumberOfImagesNotRecorded()
     }
 
-    // check internet connection
-    fun checkInternetConnection(): Boolean {
-        return application.checkInternetConnection()
-    }
 
     // fun to get reference to .info/connected in firebase realtime database and check if the user is connected
-    fun checkIfUserIsConnected() {
+    private fun checkIfUserIsConnected() {
         val ref = application.database.getReference(".info/connected")
         ref.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -521,7 +508,7 @@ class ImageRecordingViewModel @Inject constructor(
         val localVerFile = File(context.filesDir, "version.txt")
         var version = sharedPreferences.getInt("imagesVersion", -1)
 
-        if (application.checkInternetConnection() && _connected.value) {
+        if (connectionLiveData.value == true) {
             Log.i("RecordScreen", "getImagesBasedOnVersion() | internet connection available")
         } else {
             Log.i("RecordScreen", "getImagesBasedOnVersion() | no internet connection")
@@ -618,6 +605,11 @@ class ImageRecordingViewModel @Inject constructor(
         val recordsDir = context.getDir("records", MODE_PRIVATE).absolutePath
         val uidDir = File(recordsDir, application.firebaseAuth.currentUser?.uid ?: "default")
         checkAndCreateDir(uidDir)
+        recordsRef.metadata.addOnSuccessListener {
+            Log.i("RecordScreen", "checkIfUserHasAudioFiles() | metadata: $it")
+        }.addOnFailureListener {
+            Log.i("RecordScreen", "checkIfUserHasAudioFiles() | metadata error: $it")
+        }
         recordsRef.listAll().addOnSuccessListener { listResult ->
             hasAudioFiles = listResult.items.isNotEmpty()
             val numberOfFiles = listResult.items.size
@@ -839,16 +831,41 @@ class ImageRecordingViewModel @Inject constructor(
         }
     }
 
+    private fun downloadOldRecords(){
+        checkIfUserHasAudioFiles(object : DownloadCompletionListener {
+            override fun onDownloadComplete() {
+                updateItemListJson()
+                updateCurrentItem()
+                Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadComplete()")
+            }
+
+            override fun onDownloadFailed(file: File, exception: Exception) {
+                Log.i("RecordScreen", "checkIfUserHasAudioFiles() | onDownloadFailed() | error: $exception")
+                updateItemListJson()
+                updateCurrentItem()
+            }
+
+            override fun onNoFilesToDownload() {
+                updateItemListJson()
+                updateCurrentItem()
+            }
+        })
+    }
+
     private fun prepareToDisplay() {
 //        _loadingState.value = LoadingStates.LOADING
         initializeItemList()
-        updateItemListJson()
+        if(connectionLiveData.value != true){
+            updateCurrentItem()
+        } else {
+            downloadOldRecords()
+        }
 
 //        _numberOfImages.value = itemList.value.size
 //        determineNumberOfImagesRecorded()
 //        determineNumberOfImagesNotRecorded()
 
-        updateCurrentItem()
+//        updateCurrentItem()
     }
 
     // loop over the audio files in the uidDir and upload them to firebase storage

@@ -23,6 +23,7 @@ import com.toddler.recordit.screens.dashboard.HomeScreen
 import com.toddler.recordit.screens.ImageRecordingViewModel
 import com.toddler.recordit.screens.record.RecordScreen
 import com.toddler.recordit.ui.theme.RecordItTheme
+import com.toddler.recordit.utils.ConnectionLiveData
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -31,8 +32,10 @@ class MainActivity : ComponentActivity() {
 
     var startSlideShow: Boolean = false
     var shouldShowRationale: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val packageName = applicationContext.packageName
         sharedPreferences = getSharedPreferences(packageName, MODE_PRIVATE)
         setContent {

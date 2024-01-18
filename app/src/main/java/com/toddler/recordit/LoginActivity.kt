@@ -71,7 +71,7 @@ class LoginActivity : ComponentActivity() {
 
         if (isSignedIn) {
             val userName = firebaseAuth.currentUser?.displayName
-            Toast.makeText(this, "Welcome $userName", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Welcome $userName", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return

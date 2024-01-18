@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.landscapist.animation)
     implementation(libs.landscapist.transformation)
     implementation(libs.androidx.hilt)
+    implementation(libs.compose.livedata)
 //    kapt("androidx.hilt:hilt-compiler:1.0.0-alpha01")
 //    implementation(libs.dagger.hilt.android)
 //    implementation(libs.hilt.compiler)

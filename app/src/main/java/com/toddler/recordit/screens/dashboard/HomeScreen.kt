@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -108,10 +109,11 @@ fun HomeScreen(
 //    val numberOfImagesNotRecorded = viewModel.itemList.collectAsState().value.filter { !it.recorded }.size
 
     val loadingState = viewModel.loadingState.collectAsState().value
-    val connected = viewModel.connected.collectAsState().value
     val uploading = viewModel.isUploading.collectAsState().value
 
-    var showNetworkMsg by remember { mutableStateOf(false) }
+//    val connected = viewModel.connected.collectAsState().value
+//    var showNetworkMsg by remember { mutableStateOf(false) }
+//    val isNetworkAvailable = viewModel.connectionLiveData.observeAsState().value
 
     var imagesReady by remember { mutableStateOf(false) }
 
@@ -358,29 +360,29 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // make sure it is the same value for one second
-                    LaunchedEffect(connected) {
-                        showNetworkMsg = if(!connected){
-                            delay(1000)
-                            true
-                        } else{
-                            false
-                        }
-                    }
-                    if(showNetworkMsg){
-                        Text(
-                            text = "Network not available",
-                            fontFamily = Abel,
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                color = ErrorRed,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                            ),
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .padding(4.dp)
-                        )
-                    }
+//                    // make sure it is the same value for one second
+//                    LaunchedEffect(connected) {
+//                        showNetworkMsg = if(!connected){
+//                            delay(1000)
+//                            true
+//                        } else{
+//                            false
+//                        }
+//                    }
+//                    if(isNetworkAvailable != true){
+//                        Text(
+//                            text = "Network not available",
+//                            fontFamily = Abel,
+//                            style = TextStyle(
+//                                fontSize = 14.sp,
+//                                color = ErrorRed,
+//                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+//                            ),
+//                            modifier = Modifier
+//                                .align(Alignment.CenterHorizontally)
+//                                .padding(4.dp)
+//                        )
+//                    }
 
                     when (loadingState) {
                         LoadingStates.DONE -> { imagesReady = true }
