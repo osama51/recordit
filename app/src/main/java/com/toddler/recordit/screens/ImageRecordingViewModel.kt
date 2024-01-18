@@ -121,6 +121,13 @@ class ImageRecordingViewModel @Inject constructor(
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected
 
+    /**
+     * IMPORTANT: I set an observer for the connectionLiveData in HomeScreen,
+     *            and that in turn turns on the onAvailable() method inside
+     *            the ConnectionLiveData utility, if you commented that, all
+     *            these conditions will be useless and the value will always
+     *            be null
+     * */
     val connectionLiveData = ConnectionLiveData(context)
 
 
@@ -463,7 +470,6 @@ class ImageRecordingViewModel @Inject constructor(
 //        determineNumberOfImagesNotRecorded()
     }
 
-
     // fun to get reference to .info/connected in firebase realtime database and check if the user is connected
     private fun checkIfUserIsConnected() {
         val ref = application.database.getReference(".info/connected")
@@ -508,6 +514,13 @@ class ImageRecordingViewModel @Inject constructor(
         val localVerFile = File(context.filesDir, "version.txt")
         var version = sharedPreferences.getInt("imagesVersion", -1)
 
+        /**
+         * IMPORTANT: I set an observer for the connectionLiveData in HomeScreen,
+         *            and that in turn turns on the onAvailable() method inside
+         *            the ConnectionLiveData utility, if you commented that, all
+         *            these conditions will be useless and the value will always
+         *            be null
+         * */
         if (connectionLiveData.value == true) {
             Log.i("RecordScreen", "getImagesBasedOnVersion() | internet connection available")
         } else {
@@ -855,9 +868,18 @@ class ImageRecordingViewModel @Inject constructor(
     private fun prepareToDisplay() {
 //        _loadingState.value = LoadingStates.LOADING
         initializeItemList()
+        /**
+         * IMPORTANT: I set an observer for the connectionLiveData in HomeScreen,
+         *            and that in turn turns on the onAvailable() method inside
+         *            the ConnectionLiveData utility, if you commented that, all
+         *            these conditions will be useless and the value will always
+         *            be null
+         * */
         if(connectionLiveData.value != true){
+            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
             updateCurrentItem()
         } else {
+            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
             downloadOldRecords()
         }
 
