@@ -127,6 +127,9 @@ class ImageRecordingViewModel @Inject constructor(
      *            the ConnectionLiveData utility, if you commented that, all
      *            these conditions will be useless and the value will always
      *            be null
+     *            Edit: Not, I was wrong, I still can't use the connectionLiveData
+     *            here in viewModel without an observer. it seems only observers
+     *            are able to trigger the onAvailable() method inside the utility
      * */
     val connectionLiveData = ConnectionLiveData(context)
 
@@ -513,20 +516,8 @@ class ImageRecordingViewModel @Inject constructor(
         val imagesVerRef = storageRef.child("images/version.txt")
         val localVerFile = File(context.filesDir, "version.txt")
         var version = sharedPreferences.getInt("imagesVersion", -1)
+        prepareToDisplay()
 
-        /**
-         * IMPORTANT: I set an observer for the connectionLiveData in HomeScreen,
-         *            and that in turn turns on the onAvailable() method inside
-         *            the ConnectionLiveData utility, if you commented that, all
-         *            these conditions will be useless and the value will always
-         *            be null
-         * */
-        if (connectionLiveData.value == true) {
-            Log.i("RecordScreen", "getImagesBasedOnVersion() | internet connection available")
-        } else {
-            Log.i("RecordScreen", "getImagesBasedOnVersion() | no internet connection")
-            prepareToDisplay()
-        }
         imagesVerRef.getFile(localVerFile).addOnSuccessListener {
             Log.i(
                 "RecordScreen",
@@ -868,20 +859,26 @@ class ImageRecordingViewModel @Inject constructor(
     private fun prepareToDisplay() {
 //        _loadingState.value = LoadingStates.LOADING
         initializeItemList()
+        updateCurrentItem()
+        downloadOldRecords()
         /**
          * IMPORTANT: I set an observer for the connectionLiveData in HomeScreen,
          *            and that in turn turns on the onAvailable() method inside
          *            the ConnectionLiveData utility, if you commented that, all
          *            these conditions will be useless and the value will always
          *            be null
+         *            Edit: Not, I was wrong, I still can't use the connectionLiveData
+         *                  here in viewModel without an observer. it seems only observers
+         *                  are able to trigger the onAvailable() method inside the utility
          * */
-        if(connectionLiveData.value != true){
-            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
-            updateCurrentItem()
-        } else {
-            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
-            downloadOldRecords()
-        }
+//        if(connectionLiveData.value != true){
+//            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
+//            updateCurrentItem()
+//        } else {
+//            Log.d("RecordScreen", "prepareToDisplay() | connectionLiveData.value: ${connectionLiveData.value}")
+//            downloadOldRecords()
+//        }
+
 
 //        _numberOfImages.value = itemList.value.size
 //        determineNumberOfImagesRecorded()

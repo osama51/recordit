@@ -113,7 +113,7 @@ fun HomeScreen(
 
 //    val connected = viewModel.connected.collectAsState().value
 //    var showNetworkMsg by remember { mutableStateOf(false) }
-    val isNetworkAvailable = viewModel.connectionLiveData.observeAsState().value
+//    val isNetworkAvailable = viewModel.connectionLiveData.observeAsState().value
 
     var imagesReady by remember { mutableStateOf(false) }
 
